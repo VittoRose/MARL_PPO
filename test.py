@@ -1,3 +1,2 @@
-import gym
+from envs.coverage import GridCoverage
 
-env = gym.make("envs:MARL_Cov-v0")

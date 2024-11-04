@@ -1,18 +1,33 @@
 import numpy as np
 import gymnasium as gym
 
-from .reward import *
+#-------------------------------#
+#           Reward
+#-------------------------------#
 
-# from gymnasium.envs.registration import register
+# Agent move into a wall
+CONTACT = -5
 
-# register(
-#     id = "MARL_Cov",
-#     entry_point= "MARL_Coverage.coverage:GridCoverage",
-#     max_episode_steps=30 
-# )
+# Agent move in a empty tile
+TILE_NOT_COVERED = 10
+
+# Agent moved in a previous covered tile
+TILE_COVERED = -1
+
+# Agent move out map
+OUT = CONTACT
+
+# Agent bump into other agent
+COLLISION = -10
+
+# Agents covered all tiles
+ALL_COVERED = 100
+
+#-------------------------------#
+#           Env param
+#-------------------------------#
 
 N_AGENT = 2
-
 DTYPE = np.int8
 
 OBSTACLE = -1
@@ -80,15 +95,15 @@ class GridCoverage(gym.Env):
         while True:
             pos1 = (np.random.randint(0, self.w), np.random.randint(0, self.h))
             if self.grid[pos1] == FREE:
-                # Mark the tile as visited
+                # Mark the tile as visited by the agent 0 (value == 1)
                 self.grid[pos1] = VISITED
                 break
 
         while True:
             pos2 = (np.random.randint(0, self.w), np.random.randint(0, self.h))
             if self.grid[pos2] == FREE:
-                # Mark the tile as visited
-                self.grid[pos2] = VISITED
+                # Mark the tile as visited by the agent 1 (value == 2)
+                self.grid[pos2] = VISITED + 1
                 break        
 
         # Store agent position
@@ -119,25 +134,37 @@ class GridCoverage(gym.Env):
             # Execute action and get the reward
             if not skip:
                 if self.check_obstacle(self.agent_xy[agent], self.offsets[key]):
+                    print(f"Agent {agent} bumped into a obstacle")
                     reward[agent] += CONTACT
-                    print(f"Agent {agent} bump into a obstacle") 
+                
                 elif self.check_out(self.agent_xy[agent], self.offsets[key]):
+                    print(f"Agent {agent} tried to escape")
                     reward[agent] += OUT
-                    print(f"Agent {agent} went out of map") 
+                
+                elif self.check_collision(self.agent_xy[agent], self.offsets[key], agent):
+                    print(f"Agent {agent} attacked ")
+                    reward[agent] += COLLISION
+                
                 elif self.check_visited(self.agent_xy[agent], self.offsets[key]):
-                    print(f"Agent {agent} is in a visited tile") 
+                    print(f"Agent {agent} cleaned again a tile")
                     reward[agent] += TILE_COVERED
                     # Move agent
                     self.agent_xy[agent] += self.offsets[key]
+                    # Set new position as visited from this agent
+                    to_update = np.asarray(self.agent_xy[agent])
+                    self.grid[to_update[0], to_update[1]] = VISITED + agent
+                
                 else:
-                    reward[agent] += TILE_NOT_COVERED
                     print(f"Agent {agent} did something good")
+                    reward[agent] += TILE_NOT_COVERED
                     # Move agent
                     self.agent_xy[agent] += self.offsets[key]
                     
                     # Set new position as visited
                     to_update = np.asarray(self.agent_xy[agent])
-                    self.grid[to_update[0], to_update[1]] = VISITED
+                    self.grid[to_update[0], to_update[1]] = VISITED + agent
+            else: 
+                print(f"Agent {agent} is sleeping")
 
         
         # Check if all tiles are covered
@@ -257,10 +284,27 @@ class GridCoverage(gym.Env):
         o = np.asarray(offset)
         to_check = p+o
         
-        if any(x<0 for x in to_check):
+        if any(x<0 for x in to_check) or to_check[0] >= self.h or to_check[1] >= self.w:
             return 1
         else:
             return 0
+        
+    def check_collision(self, pos, offset, agent) -> bool:
+        """
+        Check if the agent is tring to move to a tile already occupied by the other agent
+        """
+        p = np.asarray(pos)
+        o = np.asarray(offset)
+        to_check = p+o
+
+        for other in range(N_AGENT):
+            if agent != other:
+                # print(f"Roomba che attacca: {agent}, rumba fermo: {other}")
+                collision = 1 if (to_check[0] == self.agent_xy[other][0]) and (to_check[1] == self.agent_xy[other][1]) else 0
+
+                if collision == 1:
+                    print(f"to_check[0]: {to_check[0]} != self.agent[{other}][0]: {self.agent_xy[other][0]} and  to_check[1]: {to_check[1]} != self.agent[{other}][1]: {self.agent_xy[other][1]}")
+        return collision
         
     def check_visited(self, pos, offset) -> bool:
         """
@@ -273,4 +317,4 @@ class GridCoverage(gym.Env):
         to_check = p+o
 
         # All error cases are already checked
-        return 1 if self.grid[to_check[0], to_check[1]] == VISITED else 0
+        return 1 if self.grid[to_check[0], to_check[1]] >= VISITED else 0
