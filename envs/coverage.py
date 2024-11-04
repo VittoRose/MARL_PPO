@@ -1,11 +1,22 @@
 import numpy as np
 import gymnasium as gym
 
-from reward import *
+from .reward import *
+
+# from gymnasium.envs.registration import register
+
+# register(
+#     id = "MARL_Cov",
+#     entry_point= "MARL_Coverage.coverage:GridCoverage",
+#     max_episode_steps=30 
+# )
+
+N_AGENT = 2
 
 DTYPE = np.int8
-N_AGENT = 2
+
 OBSTACLE = -1
+FREE = 0
 VISITED = 1
 
 class GridCoverage(gym.Env):
@@ -20,7 +31,7 @@ class GridCoverage(gym.Env):
     
     def __init__(self, map_id: int):
 
-        super().__init__()
+        super(GridCoverage, self).__init__()
 
         self.map_id = map_id
         
@@ -48,7 +59,7 @@ class GridCoverage(gym.Env):
         super().reset(seed=seed)
 
         # Position on the grid for both agents
-        self.agent_xy = np.zeros((N_AGENT, 2))
+        self.agent_xy = np.zeros((N_AGENT, 2), dtype=DTYPE)
         self.grid = np.zeros((self.h, self.w), dtype=DTYPE)
 
         # Place obstacle
@@ -67,15 +78,15 @@ class GridCoverage(gym.Env):
         
         # Agents initial position
         while True:
-            pos1 = (np.random.randint(0, self.h), np.random.randint(0, self.w))
-            if self.grid[pos1] != OBSTACLE:
+            pos1 = (np.random.randint(0, self.w), np.random.randint(0, self.h))
+            if self.grid[pos1] == FREE:
                 # Mark the tile as visited
                 self.grid[pos1] = VISITED
                 break
 
         while True:
-            pos2 = (np.random.randint(0, self.h), np.random.randint(0, self.w))
-            if self.grid[pos2] != OBSTACLE:
+            pos2 = (np.random.randint(0, self.w), np.random.randint(0, self.h))
+            if self.grid[pos2] == FREE:
                 # Mark the tile as visited
                 self.grid[pos2] = VISITED
                 break        
@@ -102,33 +113,32 @@ class GridCoverage(gym.Env):
         for agent in range(N_AGENT):
             
             act = action[agent]
-            skip = False
 
-            # Map the action number in a key for offset
-            match act:
-                case 0: 
-                    skip = True
-                case 1:
-                    key = "up"
-                case 2: 
-                    key = "down"
-                case 3:
-                    key = "left"
-                case 4: 
-                    key = "rigth"
+            skip, key = self.act2key(act)
             
             # Execute action and get the reward
             if not skip:
                 if self.check_obstacle(self.agent_xy[agent], self.offsets[key]):
-                    reward[agent] += CONTACT 
+                    reward[agent] += CONTACT
+                    print(f"Agent {agent} bump into a obstacle") 
                 elif self.check_out(self.agent_xy[agent], self.offsets[key]):
                     reward[agent] += OUT
+                    print(f"Agent {agent} went out of map") 
                 elif self.check_visited(self.agent_xy[agent], self.offsets[key]):
+                    print(f"Agent {agent} is in a visited tile") 
                     reward[agent] += TILE_COVERED
+                    # Move agent
                     self.agent_xy[agent] += self.offsets[key]
                 else:
                     reward[agent] += TILE_NOT_COVERED
+                    print(f"Agent {agent} did something good")
+                    # Move agent
                     self.agent_xy[agent] += self.offsets[key]
+                    
+                    # Set new position as visited
+                    to_update = np.asarray(self.agent_xy[agent])
+                    self.grid[to_update[0], to_update[1]] = VISITED
+
         
         # Check if all tiles are covered
         if self.grid.sum() >= self.max_grid:
@@ -138,6 +148,29 @@ class GridCoverage(gym.Env):
 
 
         return self._get_obs, reward, terminated, truncated, info
+    
+    def act2key(self, action) -> tuple[bool, str]:
+        """
+        Map the action from the network to a key for offset dict
+        Return also a bool that is true if the agent hold his position
+        """
+
+        skip = False
+        key = None
+
+        match action:
+            case 0: 
+                skip = True
+            case 1:
+                key = "up"
+            case 2: 
+                key = "down"
+            case 3:
+                key = "left"
+            case 4: 
+                key = "right"
+
+        return skip, key
     
     def _get_obs(self) -> np.array:
         """
@@ -160,12 +193,12 @@ class GridCoverage(gym.Env):
             obs[i, 4:8] = self.obstacle_detect(i)
 
         # Agent 0 get the pos of agent 1
-        obs[0, 2] = self.agent_xy[1, 0]/self.w
-        obs[0, 3] = self.agent_xy[1, 1]/self.h
+        obs[0, 2] = self.agent_xy[1, 0]/(self.w)
+        obs[0, 3] = self.agent_xy[1, 1]/(self.h)
         
         # Agent 1 get the pos of agent 0
-        obs[1, 2] = self.agent_xy[0, 0]/self.w
-        obs[1, 3] = self.agent_xy[0, 1]/self.h
+        obs[1, 2] = self.agent_xy[0, 0]/(self.w)
+        obs[1, 3] = self.agent_xy[0, 1]/(self.h)
 
         # Shared part of the state with the tile covered
         obs[:, 8:] = self.get_coverage()
@@ -178,10 +211,10 @@ class GridCoverage(gym.Env):
         """
         pos = self.agent_xy[agent_index]
 
-        up = self.check_obstacle(pos, self.offset["up"])
-        down = self.check_obstacle(pos, self.offset["down"])
-        left = self.check_obstacle(pos, self.offset["right"])
-        right = self.check_obstacle(pos, self.offset["left"])
+        up = self.check_obstacle(pos, self.offsets["up"])
+        down = self.check_obstacle(pos, self.offsets["down"])
+        left = self.check_obstacle(pos, self.offsets["right"])
+        right = self.check_obstacle(pos, self.offsets["left"])
 
         return np.asarray((up, down, left, right))
 
@@ -191,12 +224,14 @@ class GridCoverage(gym.Env):
             Return 0 if no obstacle or no map
             Return 1 if obstacle detect
         """
-        to_check = tuple(pos+offset)
+        p = np.asarray(pos)
+        o = np.asarray(offset)
+        to_check = p+o
         try:
             if any(x<0 for x in to_check):
                 return 0
             else:
-                return 1 if self.grid[to_check] < 0 else 0
+                return 1 if self.grid[to_check[0], to_check[1]] == OBSTACLE else 0
         except IndexError:
             return 0
         
@@ -218,7 +253,10 @@ class GridCoverage(gym.Env):
             Return 1 if no map
             Return 0 otherwise
         """ 
-        to_check = tuple(pos+offset)
+        p = np.asarray(pos)
+        o = np.asarray(offset)
+        to_check = p+o
+        
         if any(x<0 for x in to_check):
             return 1
         else:
@@ -230,7 +268,9 @@ class GridCoverage(gym.Env):
             Return 1 if tile already visited
             Return 0 otherwise
         """ 
-        to_check = tuple(pos+offset)
+        p = np.asarray(pos)
+        o = np.asarray(offset)
+        to_check = p+o
 
         # All error cases are already checked
-        return 1 if self.grid[to_check] == 1 else 0
+        return 1 if self.grid[to_check[0], to_check[1]] == VISITED else 0
