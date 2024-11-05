@@ -302,8 +302,6 @@ class GridCoverage(gym.Env):
                 # print(f"Roomba che attacca: {agent}, rumba fermo: {other}")
                 collision = 1 if (to_check[0] == self.agent_xy[other][0]) and (to_check[1] == self.agent_xy[other][1]) else 0
 
-                if collision == 1:
-                    print(f"to_check[0]: {to_check[0]} != self.agent[{other}][0]: {self.agent_xy[other][0]} and  to_check[1]: {to_check[1]} != self.agent[{other}][1]: {self.agent_xy[other][1]}")
         return collision
         
     def check_visited(self, pos, offset) -> bool:

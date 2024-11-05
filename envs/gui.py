@@ -13,8 +13,11 @@ gray = (128, 128, 128)
 line_width = 5
 
 class GUI():
+    """
+    Class that show the GridCoverage enviroment using pygame
+    """
 
-    # When more map available update init to select the map
+    # TODO: When more map available update init to select the map
     def __init__(self, env):
 
         pg.init()
@@ -49,13 +52,13 @@ class GUI():
         size = (self.w//self.col, self.h//self.row)
 
         # Create a grid with each tile as an object
-        self.grid = [[Tile( size, 
+        self.grid = [[Tile( size,
                            (size[0]*i+size[0]/2+self.offset, size[1]*j+size[1]/2 + self.offset),
-                            self.screen, 
-                            self.font,
-                            (i,j)
-                            ) 
-                    for i in range(self.col)] 
+                           self.screen, 
+                           self.font,
+                           (i,j)
+                           ) 
+                        for i in range(self.col)] 
                         for j in range(self.row)]
 
         # Select tiles that are obstacles
@@ -74,6 +77,9 @@ class GUI():
         self.draw(env)
 
     def draw(self, env):
+        """
+        Draw all the elements on the screen
+        """
 
         self.screen.fill(white)
         
@@ -89,7 +95,15 @@ class GUI():
         pg.time.Clock().tick(15)
 
 class Tile():
-    def __init__(self, size: tuple[int, int], center: tuple[int, int], screen, font, index):
+    """
+    Class that represent a single tile on the grid
+    :param size: (width, heigth) in pixel
+    :param center: (x,y) in pixel from the top left corner of the screen
+    :param screen: pygame screen
+    :param font: font for agent id display
+    :param index: (i,j) index to identify the tile in the grid 
+    """
+    def __init__(self, size: tuple[int, int], center: tuple[int, int], screen, font, index: tuple[int,int]):
         
         self.size = size
         self.center = center
@@ -104,19 +118,28 @@ class Tile():
         self.clean = None
         self.obstacle = None
 
-    def am_i_obstacle(self, flag):
+    def am_i_obstacle(self, flag) -> None:
+        """
+        Get the value of a grid element, and if it's a obstacle change a flag for drawing later
+        Used once in the creation of the grid
+        """
         if flag == -1:
             self.obstacle = True
 
-    def state(self, agent):
+    def state(self, agent) -> None:
+        """
+        Check if the tile si covered by one angent, update every .step()
+        """
         if self.obstacle is not True:
             self.clean = agent
 
-    def draw(self, env):
+    def draw(self, env) -> None:
         """
         Draw upper and left side of the square
         Fill the square with the required color if needed
         Write the id of the agent on the tile if somone is there
+        :param env: GridCoverage instance
+
         """
 
         # Draw upper and left line of the tile
@@ -143,7 +166,8 @@ class Tile():
     
     def somone_here(self, env):
         """
-        Check if an agent is in this tile, 
+        Check if an agent is in this tile,
+        :param env: GridCoverage instance
             return the agent id if is here
             return None otherwise
         """
