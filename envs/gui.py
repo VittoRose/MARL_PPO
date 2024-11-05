@@ -46,6 +46,7 @@ class GUI():
 
         # Font 
         self.font = pg.font.SysFont('Arial', 28)
+        self.font1 = pg.font.SysFont('Arial', 28)
         pg.font.init()
 
         # Dimensions for each square
@@ -66,17 +67,38 @@ class GUI():
             for j in range(self.col):
                 self.grid[i][j].am_i_obstacle(env.grid[i,j])
 
-    def update(self, env):
+    def update(self, env, actions):
         """
         Get the value from GridCoverage and display on the gui
         """
         for i in range(self.row):
             for j in range(self.col):
                 self.grid[i][j].state(env.grid[i,j])
+                
+        info = self.action_info(actions)
+        self.draw(env, info)
 
-        self.draw(env)
-
-    def draw(self, env):
+    def action_info(self, actions) -> tuple[str, str]:
+        """
+        Display the action on the screen
+        """
+        info = ["", ""]
+        for agent, action in enumerate(actions):
+            match action:
+                case 0: 
+                    key = f"Agent {agent} did nothing"
+                case 1:
+                    key = f"Agent {agent} move up"
+                case 2: 
+                    key = f"Agent {agent} move down"
+                case 3:
+                    key = f"Agent {agent} move left"
+                case 4: 
+                    key = f"Agent {agent} move right"
+            info[agent] = key
+        return info
+    
+    def draw(self, env, info):
         """
         Draw all the elements on the screen
         """
@@ -90,6 +112,11 @@ class GUI():
         # Draw missing border
         pg.draw.rect(self.screen, black, (self.offset+self.w, self.offset, line_width, self.h+line_width))
         pg.draw.rect(self.screen, black, (self.offset, self.offset+self.h, self.w, line_width))
+        
+        # Draw action info
+        for agent, key in enumerate(info):
+            text = self.font1.render(key, True, black)
+            self.screen.blit(text, (self.w_tot*(agent)/3, self.h+50))
 
         pg.display.flip()
         pg.time.Clock().tick(15)
@@ -181,24 +208,14 @@ class Tile():
         return id
     
 
-
-
-
-
-
-
-
+# Run a demo of the gui where the agents move random
 if __name__ == "__main__":
     import time
 
     env = GridCoverage(1)
     env.reset()
     screen = GUI(env)
-
-    
     run = True
-
-    t0 = time.time()
 
     while run:
         time.sleep(2)
@@ -207,5 +224,6 @@ if __name__ == "__main__":
             if event.type == pg.QUIT:
                 run = False
 
-        _, reward, _, _, _ =  env.step([np.random.randint(5), np.random.randint(5)])
-        screen.update(env)
+        action = [np.random.randint(5), np.random.randint(5)]
+        _, reward, _, _, _ =  env.step(action)
+        screen.update(env, action)
