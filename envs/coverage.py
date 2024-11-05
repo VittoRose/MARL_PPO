@@ -1,5 +1,6 @@
 import numpy as np
 import gymnasium as gym
+from gymnasium import spaces
 
 #-------------------------------#
 #           Reward
@@ -56,8 +57,13 @@ class GridCoverage(gym.Env):
         else:
             raise ValueError("Map not available")
 
-        self.action_space = 5
-        self.state_space = 2 + 4 + self.h*self.w
+        self.action_space = spaces.MultiDiscrete([5,5])
+        self.observation_space = spaces.Box(
+            low=0.0,
+            high=1.0,
+            shape=(N_AGENT, 2*N_AGENT+4+self.h*self.w),
+            dtype=np.float32
+        )
 
         # Offsets to check near tiles
         self.offsets = {
@@ -67,7 +73,7 @@ class GridCoverage(gym.Env):
             "left": [0, -1]
         }
 
-    def reset(self, seed: int = None):
+    def reset(self, seed = None, options = None):
         """
         Set all the tiles to not visited and create obstacle
         """
@@ -109,6 +115,11 @@ class GridCoverage(gym.Env):
         # Store agent position
         self.agent_xy[0] = pos1
         self.agent_xy[1] = pos2
+        
+        info = {}
+        obs = self._get_obs()
+        
+        return obs, info
 
 
     def step(self, action: list[int]) -> tuple[tuple[np.array], tuple[int], bool, bool, None]:
@@ -119,8 +130,7 @@ class GridCoverage(gym.Env):
                 3 -> Left
                 4 -> Right
         """
-
-        info = None
+        
         reward = [0, 0]
 
         terminated, truncated = False, False
@@ -134,19 +144,15 @@ class GridCoverage(gym.Env):
             # Execute action and get the reward
             if not skip:
                 if self.check_obstacle(self.agent_xy[agent], self.offsets[key]):
-                    print(f"Agent {agent} bumped into a obstacle")
                     reward[agent] += CONTACT
                 
                 elif self.check_out(self.agent_xy[agent], self.offsets[key]):
-                    print(f"Agent {agent} tried to escape")
                     reward[agent] += OUT
                 
                 elif self.check_collision(self.agent_xy[agent], self.offsets[key], agent):
-                    print(f"Agent {agent} attacked ")
                     reward[agent] += COLLISION
                 
                 elif self.check_visited(self.agent_xy[agent], self.offsets[key]):
-                    print(f"Agent {agent} cleaned again a tile")
                     reward[agent] += TILE_COVERED
                     # Move agent
                     self.agent_xy[agent] += self.offsets[key]
@@ -155,7 +161,6 @@ class GridCoverage(gym.Env):
                     self.grid[to_update[0], to_update[1]] = VISITED + agent
                 
                 else:
-                    print(f"Agent {agent} did something good")
                     reward[agent] += TILE_NOT_COVERED
                     # Move agent
                     self.agent_xy[agent] += self.offsets[key]
@@ -163,18 +168,51 @@ class GridCoverage(gym.Env):
                     # Set new position as visited
                     to_update = np.asarray(self.agent_xy[agent])
                     self.grid[to_update[0], to_update[1]] = VISITED + agent
-            else: 
-                print(f"Agent {agent} is sleeping")
 
-        
         # Check if all tiles are covered
-        if self.grid.sum() >= self.max_grid:
+        if self.get_coverage().sum() >= self.max_grid:
             reward[0] += ALL_COVERED
             reward[1] += ALL_COVERED
             terminated = True
 
+        # Prepare out variable
+        obs = self._get_obs()
+        info = {}
+        
+        return obs, reward, terminated, truncated, info
+    
+    def _get_obs(self) -> np.array:
+        """
+        Return the observation for reset() and step()
+            Single state configuration:
+                Self position (normalized)                  [x,y]                                       type = float
+                Position of other agent (normalized)        [x1, y1]                                    type = float
+                Presence of obstacle around the agent:      [Up, Down, Left, Right]                     type = bool
+                Tiles covered:                              [Tile[0,0], Tile[0,1], .... Tile[h+1,w+1]]  type = bool
+        """
+        # Preallocation
+        obs = np.asarray(np.zeros((N_AGENT, 2+2+4+self.w*self.h), dtype=np.float32))
 
-        return self._get_obs, reward, terminated, truncated, info
+        for i in range(N_AGENT):           
+            # Position of agent
+            obs[i, 0] = self.agent_xy[i,0]/self.w
+            obs[i, 1] = self.agent_xy[i,1]/self.h
+            
+            # Obstacle around
+            obs[i, 4:8] = self.obstacle_detect(i)
+
+        # Agent 0 get the pos of agent 1
+        obs[0, 2] = self.agent_xy[1, 0]/(self.w)
+        obs[0, 3] = self.agent_xy[1, 1]/(self.h)
+        
+        # Agent 1 get the pos of agent 0
+        obs[1, 2] = self.agent_xy[0, 0]/(self.w)
+        obs[1, 3] = self.agent_xy[0, 1]/(self.h)
+
+        # Shared part of the state with the tile covered
+        obs[:, 8:] = self.get_coverage()
+
+        return obs
     
     def act2key(self, action) -> tuple[bool, str]:
         """
@@ -198,39 +236,6 @@ class GridCoverage(gym.Env):
                 key = "right"
 
         return skip, key
-    
-    def _get_obs(self) -> np.array:
-        """
-        Return the observation for reset() and step()
-            Single state configuration:
-                Self position (normalized)                  [x,y]                                       type = float
-                Position of other agent (normalized)        [x1, y1]                                    type = float
-                Presence of obstacle around the agent:      [Up, Down, Left, Right]                     type = bool
-                Tiles covered:                              [Tile[0,0], Tile[0,1], .... Tile[h+1,w+1]]  type = bool
-        """
-        # Preallocation
-        obs = np.zeros((N_AGENT, 2+2+4+self.w*self.h))
-
-        for i in range(N_AGENT):           
-            # Position of agent
-            obs[i, 0] = self.agent_xy[i,0]/self.w
-            obs[i, 1] = self.agent_xy[i,1]/self.h
-            
-            # Obstacle around
-            obs[i, 4:8] = self.obstacle_detect(i)
-
-        # Agent 0 get the pos of agent 1
-        obs[0, 2] = self.agent_xy[1, 0]/(self.w)
-        obs[0, 3] = self.agent_xy[1, 1]/(self.h)
-        
-        # Agent 1 get the pos of agent 0
-        obs[1, 2] = self.agent_xy[0, 0]/(self.w)
-        obs[1, 3] = self.agent_xy[0, 1]/(self.h)
-
-        # Shared part of the state with the tile covered
-        obs[:, 8:] = self.get_coverage()
-
-        return obs
     
     def obstacle_detect(self, agent_index) -> np.array:
         """
@@ -271,6 +276,7 @@ class GridCoverage(gym.Env):
 
         # Sobstitute obstacle value with not visited
         temp[temp == OBSTACLE] = 0
+        temp[temp >= VISITED] = VISITED
 
         return temp
     

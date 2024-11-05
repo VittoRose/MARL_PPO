@@ -45,7 +45,7 @@ class GUI():
         pg.display.set_caption("MARL Coverage GUI test")
 
         # Font 
-        self.font = pg.font.SysFont('Arial', 28)
+        self.font = pg.font.SysFont('Arial', 40)
         self.font1 = pg.font.SysFont('Arial', 28)
         pg.font.init()
 
@@ -186,10 +186,10 @@ class Tile():
 
         if id == 0:
             text = self.font.render("0", True, black)
-            self.screen.blit(text, self.center)
+            self.screen.blit(text, (self.center[0], self.center[1]-20))
         elif id == 1:
             text = self.font.render("1", True, black)
-            self.screen.blit(text, self.center)
+            self.screen.blit(text, (self.center[0], self.center[1]-20))
     
     def somone_here(self, env):
         """
@@ -202,7 +202,6 @@ class Tile():
 
         for indx, agent in enumerate(env.agent_xy):
             if agent[0] == self.j and agent[1] == self.i:
-                print(f"Agent {indx} is in ({self.i},{self.j}) as expected {agent}")
                 id = indx
                 break       # Only one agent can be here, no need to continue
         return id
