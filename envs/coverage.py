@@ -2,27 +2,7 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 
-#-------------------------------#
-#           Reward
-#-------------------------------#
-
-# Agent move into a wall
-CONTACT = -5
-
-# Agent move in a empty tile
-TILE_NOT_COVERED = 10
-
-# Agent moved in a previous covered tile
-TILE_COVERED = -1
-
-# Agent move out map
-OUT = CONTACT
-
-# Agent bump into other agent
-COLLISION = -10
-
-# Agents covered all tiles
-ALL_COVERED = 100
+from .rewards import *
 
 #-------------------------------#
 #           Env param
@@ -124,6 +104,7 @@ class GridCoverage(gym.Env):
 
     def step(self, action: list[int]) -> tuple[tuple[np.array], tuple[int], bool, bool, None]:
         """
+        Check documentation for reward
         Action: 0 -> Hold
                 1 -> Up
                 2 -> Down
@@ -131,7 +112,7 @@ class GridCoverage(gym.Env):
                 4 -> Right
         """
         
-        reward = [0, 0]
+        reward = {0: 0, 1: 0}
 
         terminated, truncated = False, False
 
@@ -177,9 +158,8 @@ class GridCoverage(gym.Env):
 
         # Prepare out variable
         obs = self._get_obs()
-        info = {}
         
-        return obs, reward, terminated, truncated, info
+        return obs, 0, terminated, truncated, reward
     
     def _get_obs(self) -> np.array:
         """
