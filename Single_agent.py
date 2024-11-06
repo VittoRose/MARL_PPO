@@ -1,6 +1,6 @@
 import gymnasium as gym
 import torch
-import envs
+import grid_env
 
 from PPO.buffer import Buffer
 from PPO.ActorCritic import Agent
@@ -9,14 +9,14 @@ from utils.run_info import InfoPlot
 from utils.util_function import make_env
 import PPO.algo as PPO
 
-name = "prova_00"
+name = "prova_02"
 gym_id = "GridCoverage-v0"
 
 # Tensorboard Summary writer
 logger = InfoPlot(gym_id, name, "cpu")
 
 # Vector environment object
-envs = gym.vector.SyncVectorEnv([make_env(gym_id, 1) for _ in range(n_env)])
+envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=1) for _ in range(n_env)])
 test_env = gym.make(gym_id, n_agent=1, map_id=1)
 
 obs_shape = 31

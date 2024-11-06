@@ -7,7 +7,7 @@ import os
 # Network parameters
 neurons = 32
 activation_fn = nn.Tanh()
-hidden_layer = 2                # Only for plot, change number of hidden layer manually
+hidden_layer = 2                # Only for plot, change it manually
 
 class Agent(nn.Module):
     """

@@ -9,7 +9,7 @@ def create_md_summary(gym_id: str, name: str, folder: str, seed: float, device: 
     report = folder + name + ".md"
     
     with open(report, 'w') as file:
-        file.write("# Enviroment: " + gym_id + "\n\n")
+        file.write("# Environment: " + gym_id + "\n\n")
         
         file.write("Executed on " + device + "\n")
         if int(seed) == SEED:
@@ -20,12 +20,12 @@ def create_md_summary(gym_id: str, name: str, folder: str, seed: float, device: 
         file.write("\n## Training parameters\n\n")
 
         file.write(f"- Total epoch: {MAX_EPOCH}\n")
-        file.write(f"- Number of enviroments: {n_env}\n")
+        file.write(f"- Number of environments: {n_env}\n")
         file.write(f"- Timestep for collecting data T = {n_step}\n")
         file.write(f"- Epoch for test: {TEST_INTERVAL} with {TEST_RESET} tests each time\n")
         file.write(f"- Total data for each loop: {BATCH_SIZE}\n")
         file.write(f"- Update epoch K = {K_EPOCHS}\n")
-        file.write(f"- Minibatch size {MINI_BATCH_SIZE}\n\n")
+        file.write(f"- Mini-batch size {MINI_BATCH_SIZE}\n\n")
 
         file.write("## Hyperparameters\n\n")
         file.write(f"- Discount factor: {GAMMA}\n")

@@ -148,7 +148,8 @@ class GridCoverage(gym.Env):
                     # Set new position as visited
                     to_update = np.asarray(self.agent_xy[agent])
                     self.grid[to_update[0], to_update[1]] = VISITED + agent
-
+            else:
+                reward[agent] += -2
         # Check if all tiles are covered
         if self.get_coverage().sum() >= self.max_grid:
             reward[0] += ALL_COVERED
