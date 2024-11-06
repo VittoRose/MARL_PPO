@@ -50,7 +50,6 @@ class GridCoverage(gym.Env):
             
         # Position on the grid for both agents
         self.agent_xy = np.zeros((self.n_agent, 2), dtype=DTYPE)
-        self.grid = np.zeros((self.h, self.w), dtype=DTYPE)
 
         # Offsets to check near tiles
         self.offsets = {
@@ -65,7 +64,8 @@ class GridCoverage(gym.Env):
         Set all the tiles to not visited and create obstacle
         """
         super().reset(seed=seed)
-
+        # Create grid map
+        self.grid = np.zeros((self.h, self.w), dtype=DTYPE)
         # Place obstacle
         if self.map_id == 1:
             self.grid[1,0] = OBSTACLE
@@ -174,9 +174,10 @@ class GridCoverage(gym.Env):
                 Tiles covered:                              [Tile[0,0], Tile[0,1], .... Tile[h+1,w+1]]  type = bool
             If single agent the state is shorter and the position of other agent is missing
         """
+        # Preallocation
+        obs = np.zeros((self.n_agent, 2*self.n_agent+4+self.w*self.h), dtype=np.float32)
+
         if self.n_agent == 2:
-            # Preallocation
-            obs = np.zeros((self.n_agent, 2+2+4+self.w*self.h), dtype=np.float32)
 
             for i in range(self.n_agent):           
                 # Position of agent
@@ -196,13 +197,11 @@ class GridCoverage(gym.Env):
 
             # Shared part of the state with the tile covered
             obs[:, 8:] = self.get_coverage()
-        else:
-            
-            obs = np.zeros((self.n_agent, 2+2+4+self.w*self.h), dtype=np.float32)
-            obs[i, 0] = self.agent_xy[i,0]/self.w
-            obs[i, 1] = self.agent_xy[i,1]/self.h    
-            obs[i, 4:8] = self.obstacle_detect(i)
-            obs[:, 8:] = self.get_coverage()
+        else:            
+            obs[0,0] = self.agent_xy[0,0]/self.w
+            obs[0,1] = self.agent_xy[0,1]/self.h    
+            obs[0,2:6] = self.obstacle_detect(0)
+            obs[0,6:] = self.get_coverage()
             
         return obs
     
@@ -254,6 +253,8 @@ class GridCoverage(gym.Env):
         try:
             if any(x<0 for x in to_check):
                 return 0
+            elif to_check[0] >= self.h or to_check[1] >= self.w:
+                return 0
             else:
                 return 1 if self.grid[to_check[0], to_check[1]] == OBSTACLE else 0
         except IndexError:
@@ -294,6 +295,8 @@ class GridCoverage(gym.Env):
         p = np.asarray(pos)
         o = np.asarray(offset)
         to_check = p+o
+        
+        collision = 0
 
         for other in range(self.n_agent):
             if agent != other:

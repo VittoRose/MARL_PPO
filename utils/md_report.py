@@ -1,5 +1,5 @@
-from parameters import *
-from ActorCritic import neurons, activation_fn, hidden_layer
+from PPO.parameters import *
+from PPO.ActorCritic import neurons, activation_fn, hidden_layer
 from time import time
 
 def create_md_summary(gym_id: str, name: str, folder: str, seed: float, device: str)-> None:

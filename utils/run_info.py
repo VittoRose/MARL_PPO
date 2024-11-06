@@ -6,7 +6,7 @@ import random
 import os
 from time import time
 
-from parameters import *
+from PPO.parameters import *
 from utils.md_report import create_md_summary, complete_md_summary
 
 class InfoPlot:
