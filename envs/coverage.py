@@ -4,13 +4,7 @@ from gymnasium import spaces
 
 from .rewards import *
 
-#-------------------------------#
-#           Env param
-#-------------------------------#
-
-N_AGENT = 2
 DTYPE = np.int8
-
 OBSTACLE = -1
 FREE = 0
 VISITED = 1
@@ -25,11 +19,16 @@ class GridCoverage(gym.Env):
             2   -> Agent in that tile
     """
     
-    def __init__(self, map_id: int):
+    def __init__(self, n_agent: int, map_id: int):
 
         super(GridCoverage, self).__init__()
 
         self.map_id = map_id
+        
+        if n_agent == 1 or n_agent == 2:
+            self.n_agent = n_agent
+        else:
+            raise ValueError("Only 1 or 2 agent")
         
         if self.map_id == 1:
             self.h = 5
@@ -37,13 +36,21 @@ class GridCoverage(gym.Env):
         else:
             raise ValueError("Map not available")
 
-        self.action_space = spaces.MultiDiscrete([5,5])
         self.observation_space = spaces.Box(
             low=0.0,
             high=1.0,
-            shape=(N_AGENT, 2*N_AGENT+4+self.h*self.w),
+            shape=(self.n_agent, 2*self.n_agent+4+self.h*self.w),
             dtype=np.float32
         )
+
+        if self.n_agent == 2:
+            self.action_space = spaces.MultiDiscrete([5,5])
+        else:
+            self.action_space = spaces.Discrete(5)
+            
+        # Position on the grid for both agents
+        self.agent_xy = np.zeros((self.n_agent, 2), dtype=DTYPE)
+        self.grid = np.zeros((self.h, self.w), dtype=DTYPE)
 
         # Offsets to check near tiles
         self.offsets = {
@@ -58,10 +65,6 @@ class GridCoverage(gym.Env):
         Set all the tiles to not visited and create obstacle
         """
         super().reset(seed=seed)
-
-        # Position on the grid for both agents
-        self.agent_xy = np.zeros((N_AGENT, 2), dtype=DTYPE)
-        self.grid = np.zeros((self.h, self.w), dtype=DTYPE)
 
         # Place obstacle
         if self.map_id == 1:
@@ -78,28 +81,20 @@ class GridCoverage(gym.Env):
             raise ValueError("Map not available")
         
         # Agents initial position
-        while True:
-            pos1 = (np.random.randint(0, self.w), np.random.randint(0, self.h))
-            if self.grid[pos1] == FREE:
-                # Mark the tile as visited by the agent 0 (value == 1)
-                self.grid[pos1] = VISITED
-                break
+        for agent in range(self.n_agent):
+            while True:
+                pos = (np.random.randint(0, self.w), np.random.randint(0, self.h))
+                if self.grid[pos] == FREE:
+                    # Mark the tile as visited 
+                    self.grid[pos] = VISITED + agent
+                    break 
 
-        while True:
-            pos2 = (np.random.randint(0, self.w), np.random.randint(0, self.h))
-            if self.grid[pos2] == FREE:
-                # Mark the tile as visited by the agent 1 (value == 2)
-                self.grid[pos2] = VISITED + 1
-                break        
-
-        # Store agent position
-        self.agent_xy[0] = pos1
-        self.agent_xy[1] = pos2
+            # Store agent position
+            self.agent_xy[0] = pos   
         
-        info = {}
         obs = self._get_obs()
         
-        return obs, info
+        return obs, {}
 
 
     def step(self, action: list[int]) -> tuple[tuple[np.array], tuple[int], bool, bool, None]:
@@ -112,11 +107,15 @@ class GridCoverage(gym.Env):
                 4 -> Right
         """
         
+        # If action is not a list must be a single value
+        if type(action) != list:
+            action = [action]
+        
         reward = {0: 0, 1: 0}
 
         terminated, truncated = False, False
 
-        for agent in range(N_AGENT):
+        for agent in range(self.n_agent):
             
             act = action[agent]
 
@@ -124,16 +123,16 @@ class GridCoverage(gym.Env):
             
             # Execute action and get the reward
             if not skip:
-                if self.check_obstacle(self.agent_xy[agent], self.offsets[key]):
+                if self.obstacle(self.agent_xy[agent], self.offsets[key]):
                     reward[agent] += CONTACT
                 
-                elif self.check_out(self.agent_xy[agent], self.offsets[key]):
+                elif self.out(self.agent_xy[agent], self.offsets[key]):
                     reward[agent] += OUT
                 
-                elif self.check_collision(self.agent_xy[agent], self.offsets[key], agent):
+                elif self.collision(self.agent_xy[agent], self.offsets[key], agent) and self.n_agent > 1:
                     reward[agent] += COLLISION
                 
-                elif self.check_visited(self.agent_xy[agent], self.offsets[key]):
+                elif self.visited(self.agent_xy[agent], self.offsets[key]):
                     reward[agent] += TILE_COVERED
                     # Move agent
                     self.agent_xy[agent] += self.offsets[key]
@@ -155,43 +154,56 @@ class GridCoverage(gym.Env):
             reward[0] += ALL_COVERED
             reward[1] += ALL_COVERED
             terminated = True
+        
+        rew = 0
+        if self.n_agent == 1:
+            rew = reward[0]
 
         # Prepare out variable
         obs = self._get_obs()
         
-        return obs, 0, terminated, truncated, reward
+        return obs, rew, terminated, truncated, reward
     
     def _get_obs(self) -> np.array:
         """
         Return the observation for reset() and step()
-            Single state configuration:
+            Single state configuration if multi angent:
                 Self position (normalized)                  [x,y]                                       type = float
                 Position of other agent (normalized)        [x1, y1]                                    type = float
                 Presence of obstacle around the agent:      [Up, Down, Left, Right]                     type = bool
                 Tiles covered:                              [Tile[0,0], Tile[0,1], .... Tile[h+1,w+1]]  type = bool
+            If single agent the state is shorter and the position of other agent is missing
         """
-        # Preallocation
-        obs = np.asarray(np.zeros((N_AGENT, 2+2+4+self.w*self.h), dtype=np.float32))
+        if self.n_agent == 2:
+            # Preallocation
+            obs = np.zeros((self.n_agent, 2+2+4+self.w*self.h), dtype=np.float32)
 
-        for i in range(N_AGENT):           
-            # Position of agent
-            obs[i, 0] = self.agent_xy[i,0]/self.w
-            obs[i, 1] = self.agent_xy[i,1]/self.h
+            for i in range(self.n_agent):           
+                # Position of agent
+                obs[i, 0] = self.agent_xy[i,0]/self.w
+                obs[i, 1] = self.agent_xy[i,1]/self.h
+                
+                # Obstacle around
+                obs[i, 4:8] = self.obstacle_detect(i)
+
+            # Agent 0 get the pos of agent 1
+            obs[0, 2] = self.agent_xy[1, 0]/(self.w)
+            obs[0, 3] = self.agent_xy[1, 1]/(self.h)
             
-            # Obstacle around
+            # Agent 1 get the pos of agent 0
+            obs[1, 2] = self.agent_xy[0, 0]/(self.w)
+            obs[1, 3] = self.agent_xy[0, 1]/(self.h)
+
+            # Shared part of the state with the tile covered
+            obs[:, 8:] = self.get_coverage()
+        else:
+            
+            obs = np.zeros((self.n_agent, 2+2+4+self.w*self.h), dtype=np.float32)
+            obs[i, 0] = self.agent_xy[i,0]/self.w
+            obs[i, 1] = self.agent_xy[i,1]/self.h    
             obs[i, 4:8] = self.obstacle_detect(i)
-
-        # Agent 0 get the pos of agent 1
-        obs[0, 2] = self.agent_xy[1, 0]/(self.w)
-        obs[0, 3] = self.agent_xy[1, 1]/(self.h)
-        
-        # Agent 1 get the pos of agent 0
-        obs[1, 2] = self.agent_xy[0, 0]/(self.w)
-        obs[1, 3] = self.agent_xy[0, 1]/(self.h)
-
-        # Shared part of the state with the tile covered
-        obs[:, 8:] = self.get_coverage()
-
+            obs[:, 8:] = self.get_coverage()
+            
         return obs
     
     def act2key(self, action) -> tuple[bool, str]:
@@ -223,14 +235,14 @@ class GridCoverage(gym.Env):
         """
         pos = self.agent_xy[agent_index]
 
-        up = self.check_obstacle(pos, self.offsets["up"])
-        down = self.check_obstacle(pos, self.offsets["down"])
-        left = self.check_obstacle(pos, self.offsets["right"])
-        right = self.check_obstacle(pos, self.offsets["left"])
+        up = self.obstacle(pos, self.offsets["up"])
+        down = self.obstacle(pos, self.offsets["down"])
+        left = self.obstacle(pos, self.offsets["right"])
+        right = self.obstacle(pos, self.offsets["left"])
 
         return np.asarray((up, down, left, right))
 
-    def check_obstacle(self, pos, offset) -> bool:
+    def obstacle(self, pos, offset) -> bool:
         """
         Check adiacent tile for obstacle
             Return 0 if no obstacle or no map
@@ -260,7 +272,7 @@ class GridCoverage(gym.Env):
 
         return temp
     
-    def check_out(self, pos, offset) -> bool:
+    def out(self, pos, offset) -> bool:
         """
         Check adiacent tile for map
             Return 1 if no map
@@ -275,7 +287,7 @@ class GridCoverage(gym.Env):
         else:
             return 0
         
-    def check_collision(self, pos, offset, agent) -> bool:
+    def collision(self, pos, offset, agent) -> bool:
         """
         Check if the agent is tring to move to a tile already occupied by the other agent
         """
@@ -283,14 +295,13 @@ class GridCoverage(gym.Env):
         o = np.asarray(offset)
         to_check = p+o
 
-        for other in range(N_AGENT):
+        for other in range(self.n_agent):
             if agent != other:
-                # print(f"Roomba che attacca: {agent}, rumba fermo: {other}")
                 collision = 1 if (to_check[0] == self.agent_xy[other][0]) and (to_check[1] == self.agent_xy[other][1]) else 0
 
         return collision
         
-    def check_visited(self, pos, offset) -> bool:
+    def visited(self, pos, offset) -> bool:
         """
         Check adiacent tile if already visited
             Return 1 if tile already visited
