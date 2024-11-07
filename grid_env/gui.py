@@ -1,7 +1,7 @@
 import pygame as pg
 import numpy as np
 
-from coverage import GridCoverage
+from .coverage import GridCoverage
 
 # Colors
 white = (255, 255, 255)

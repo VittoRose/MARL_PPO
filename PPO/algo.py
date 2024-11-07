@@ -3,10 +3,10 @@ import numpy as np
 
 from .parameters import *
 
-def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, torch.tensor]:
+def get_advantages(agent, buffer, next_obs, next_done, device) -> tuple[torch.tensor, torch.tensor]:
     with torch.no_grad():
         next_value = agent.get_value(next_obs).reshape(1, -1)
-        advantages = torch.zeros_like(buffer.rewards)
+        advantages = torch.zeros_like(buffer.rewards).to(device)
         lastgaelam = 0
         for t in reversed(range(n_step)):
             if t == n_step- 1:
@@ -90,7 +90,7 @@ def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, 
         torch.nn.utils.clip_grad_norm_(agent.parameters(), 0.5)
         optimizer.step()
 
-def test_network(update, agent0, agent1, test_env, logger):
+def test_network(update, agent, test_env, logger, device):
     """
     Execute n complete run in a test enviroment without exploration
     """
@@ -102,22 +102,18 @@ def test_network(update, agent0, agent1, test_env, logger):
         # Collect data for 3 episode of test and log the mean reward and ep_lenght
         for i in range(TEST_RESET):
             stop_test = False
-            test_reward = np.zeros(2)
+            test_reward = 0
             test_state, _ = test_env.reset(seed = SEED)
             ep_len = 0
             
             while not stop_test:
                 # Get action with argmax
                 with torch.no_grad():
-                    test_state_tensor = torch.tensor(test_state)
-                    action0 = agent0.get_action_test(test_state_tensor[0])
-                    action1 = agent1.get_action_test(test_state_tensor[1])
+                    test_state_tensor = torch.tensor(test_state).to(device)
+                    action = agent.get_action_test(test_state_tensor[0])
                     
-                    action = [action0.numpy(), action1.numpy()]
-
-                ns, _, ter, trun, reward = test_env.step(action)
-                test_reward[0] += reward[0]
-                test_reward[1] += reward[1]
+                ns, rew, ter, trun, _ = test_env.step(action)
+                test_reward += rew
                 test_state = ns
                 ep_len +=1
 
