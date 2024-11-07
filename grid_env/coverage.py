@@ -2,7 +2,7 @@ import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
 
-from .rewards import *
+from rewards import *
 
 DTYPE = np.int8
 OBSTACLE = -1
@@ -66,6 +66,7 @@ class GridCoverage(gym.Env):
         super().reset(seed=seed)
         # Create grid map
         self.grid = np.zeros((self.h, self.w), dtype=DTYPE)
+        
         # Place obstacle
         if self.map_id == 1:
             self.grid[1,0] = OBSTACLE
@@ -75,8 +76,8 @@ class GridCoverage(gym.Env):
             self.grid[3,2] = OBSTACLE
             
             # Min and max value from the grid
-            self.min_grid = self.grid.sum()
-            self.max_grid = self.w*self.h - self.min_grid
+            n_obstacle = -self.grid.sum()
+            self.max_grid = self.w*self.h - 2*n_obstacle
         else:
             raise ValueError("Map not available")
         

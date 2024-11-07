@@ -211,7 +211,7 @@ class Tile():
 if __name__ == "__main__":
     import time
 
-    env = GridCoverage(1)
+    env = GridCoverage(2,1)
     env.reset()
     screen = GUI(env)
     run = True
