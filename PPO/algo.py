@@ -110,7 +110,7 @@ def test_network(update, agent, test_env, logger, device):
                 # Get action with argmax
                 with torch.no_grad():
                     test_state_tensor = torch.tensor(test_state).to(device)
-                    action = agent.get_action_test(test_state_tensor[0])
+                    action = agent.get_action_test(test_state_tensor)
                     
                 ns, rew, ter, trun, _ = test_env.step(action)
                 test_reward += rew

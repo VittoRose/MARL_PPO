@@ -64,6 +64,7 @@ class GridCoverage(gym.Env):
         Set all the tiles to not visited and create obstacle
         """
         super().reset(seed=seed)
+        
         # Create grid map
         self.grid = np.zeros((self.h, self.w), dtype=DTYPE)
         
