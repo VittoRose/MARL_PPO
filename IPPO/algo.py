@@ -21,7 +21,7 @@ def get_advantages(agent, buffer, next_obs, next_done, device) -> tuple[torch.te
 
     return advantages, returns
 
-def update_network(agent, optimizer, buffer, b_advantages, b_returns, logger):
+def update_network(agent, optimizer, buffer, b_advantages, b_returns, logger, agent_id):
     """
     Update network K times with the same experience divided in mini batches
     """
@@ -33,10 +33,10 @@ def update_network(agent, optimizer, buffer, b_advantages, b_returns, logger):
         # Shuffle index to break correlations
         np.random.shuffle(index)
         
-        update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index)
+        update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index, agent_id)
 
 
-def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index) -> None:
+def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index, agent_id) -> None:
     """
     Update actor and critic network using mini_batches from buffer 
     """
@@ -83,14 +83,14 @@ def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, 
 
         # Global loss function
         loss = pg_loss - ENTROPY_COEF*entropy_loss + VALUE_COEFF*v_loss
-        logger.add_loss(loss.item())
+        logger.add_loss_MARL(loss.item(), agent_id)
         
         optimizer.zero_grad()
         loss.backward()
         torch.nn.utils.clip_grad_norm_(agent.parameters(), 0.5)
         optimizer.step()
 
-def test_network(update, agent0, agent1, test_env, logger, device):
+def test_network(update, agent0, agent1, test_env, logger):
     """
     Execute n complete run in a test enviroment without exploration
     """
@@ -102,14 +102,14 @@ def test_network(update, agent0, agent1, test_env, logger, device):
         # Collect data for 3 episode of test and log the mean reward and ep_lenght
         for i in range(TEST_RESET):
             stop_test = False
-            test_reward = 0
+            test_reward = [0, 0]
             test_state, _ = test_env.reset(seed = SEED)
             ep_len = 0
             
             while not stop_test:
                 # Get action with argmax
                 with torch.no_grad():
-                    test_state_tensor = torch.tensor(test_state).to(device)
+                    test_state_tensor = torch.tensor(test_state)
                     action = [agent0.get_action_test(test_state_tensor[0]).cpu().numpy(),
                               agent1.get_action_test(test_state_tensor[1]).cpu().numpy()]
                     
@@ -120,10 +120,10 @@ def test_network(update, agent0, agent1, test_env, logger, device):
                 ep_len +=1
 
                 if ter or trun:
-                    rew_data[i] = test_reward
+                    rew_data[:,i] = test_reward
                     len_data[i] = ep_len
                     stop_test = True
 
         if ter or trun:
-            logger.add_test(np.mean(rew_data), np.mean(ep_len))
+            logger.add_test([np.mean(rew_data[0]), np.mean(rew_data[1])], np.mean(ep_len))
             stop_test = True

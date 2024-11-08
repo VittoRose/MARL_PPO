@@ -15,8 +15,7 @@ class GridCoverage(gym.Env):
         The map is represented by a grid with a value for each tile:
             0   -> Tile not visited
             -1  -> Tile with obstacle
-            1   -> Visited tile
-            2   -> Agent in that tile
+            1 + agent_id   -> Visited tile
     """
     
     def __init__(self, n_agent: int, map_id: int):
@@ -99,7 +98,7 @@ class GridCoverage(gym.Env):
         return obs, {}
 
 
-    def step(self, action: list[int]) -> tuple[tuple[np.array], tuple[int], bool, bool, None]:
+    def step(self, action: list[int] | int) -> tuple[tuple[np.array], tuple[int], bool, bool, None]:
         """
         Check documentation for reward
         Action: 0 -> Hold
@@ -110,8 +109,8 @@ class GridCoverage(gym.Env):
         """
         
         # If action is not a list must be a single value
-        if type(action) != list:
-            action = [action]
+        # if type(action) != list:
+        #     action = [action]
         
         reward = {0: 0, 1: 0}
 
@@ -152,6 +151,7 @@ class GridCoverage(gym.Env):
                     self.grid[to_update[0], to_update[1]] = VISITED + agent
             else:
                 reward[agent] += -2
+                
         # Check if all tiles are covered
         if self.get_coverage().sum() >= self.max_grid:
             reward[0] += ALL_COVERED
