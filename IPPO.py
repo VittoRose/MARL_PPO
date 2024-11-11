@@ -12,7 +12,7 @@ from utils.run_info import InfoPlot
 from utils.util_function import make_env
 import IPPO.algo as IPPO
 
-name = None
+name = "Run_00"
 gym_id = "GridCoverage-v0"
 
 # Select device

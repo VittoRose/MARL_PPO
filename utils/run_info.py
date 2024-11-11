@@ -19,7 +19,7 @@ class InfoPlot:
     def __init__(self, gym_id: str,name: str, device: str, algo: str, folder: str = "logs/", rnd: bool=False) -> SummaryWriter:
 
         # Counter for plot
-        self.loss_index = 0
+        self.test_index = 0
 
         # Speed measurament variable
         self.timer = time()
@@ -43,10 +43,10 @@ class InfoPlot:
         algo_list.remove("PPO")
         if algo in algo_list: 
             self.loss_plot = [0, 0]
-            self.test_index = [0, 0]
+            self.loss_index = [0, 0]
         else:
             self.loss_plot = 0
-            self.test_index = 0
+            self.loss_index = 0
             
         # Add folder sintax if needed
         if folder[-1] != "/" :
@@ -98,7 +98,7 @@ class InfoPlot:
         """
         if self.logger is not None:
             if self.loss_plot[agent] % 50 == 0:
-                self.logger.add_scalar(f"Train/Loss {agent}", loss[agent], self.loss_index[agent])
+                self.logger.add_scalar(f"Train/Loss {agent}", loss, self.loss_index[agent])
                 self.loss_index[agent] += 1
             
             self.loss_plot[agent] += 1
@@ -113,8 +113,10 @@ class InfoPlot:
                 self.logger.add_scalar("Test/Reward", reward, self.test_index)
                 self.logger.add_scalar("Test/Length", length, self.test_index)
             elif self.algo == "IPPO": 
-                self.logger.add_scalar("Test/Reward 0", reward[0], self.test_index)
-                self.logger.add_scalar("Test/Reward 1", reward[1], self.test_index)
+                rw0 = float(reward[0])
+                rw2 = float(reward[1])
+                self.logger.add_scalar("Test/Reward 0", rw0, self.test_index)
+                self.logger.add_scalar("Test/Reward 1", rw2, self.test_index)
                 self.logger.add_scalar("Test/Length", length, self.test_index)
             self.test_index +=1
     
