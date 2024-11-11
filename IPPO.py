@@ -1,10 +1,13 @@
 import gymnasium as gym
 import torch
 import grid_env
+from grid_env.vector_env import VectorEnv
+from grid_env.coverage import GridCoverage , encode_action
 
 from IPPO.buffer import Buffer
 from IPPO.ActorCritic import Agent
 from IPPO.parameters import *
+import grid_env.vector_env
 from utils.run_info import InfoPlot
 from utils.util_function import make_env
 import IPPO.algo as IPPO
@@ -21,6 +24,8 @@ logger = InfoPlot(gym_id, name, "cpu", "IPPO")
 
 # Vector environment object
 envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=2) for _ in range(n_env)])
+#envs = VectorEnv([GridCoverage(n_agent=2,map_id=1) for _ in range(n_env)])
+
 # envs = gym.make(gym_id, n_agent=2, map_id=1)
 test_env = gym.make(gym_id, n_agent=2, map_id=1)
 
@@ -39,7 +44,7 @@ buffer0 = Buffer(obs_shape, action_shape)
 buffer1 = Buffer(obs_shape, action_shape)
 
 # Get the first observation
-next_obs, _ = envs.reset(seed=SEED)
+next_obs, _ = envs.reset()
 
 next_obs = torch.tensor(next_obs)
 next_done = torch.zeros(n_env)
@@ -63,9 +68,10 @@ for epoch in range(0, MAX_EPOCH):
             action0, logprob0, _, value0 = agent0.get_action_and_value(next_obs[:,0,:])
             action1, logprob1, _, value1 = agent1.get_action_and_value(next_obs[:,0,:])
             
-            action = [action0.cpu().numpy(), action1.cpu().numpy()]
+            action = encode_action(action0.cpu(), action1.cpu())
 
         # Execute action in environment
+        # TODO: solve step 
         next_obs, _, truncated, terminated, reward = envs.step(action)
         done = terminated | truncated
 
@@ -73,8 +79,8 @@ for epoch in range(0, MAX_EPOCH):
         buffer1.store(value1, action1, logprob1, reward[1], step)
         next_obs, next_done = torch.tensor(next_obs), torch.tensor(done)
 
-    advantages0, returns0 = IPPO.get_advantages(agent0, buffer0, next_obs, next_done)
-    advantages1, returns1 = IPPO.get_advantages(agent0, buffer0, next_obs, next_done)
+    advantages0, returns0 = IPPO.get_advantages(agent0, buffer0, next_obs[:, 0, :], next_done)
+    advantages1, returns1 = IPPO.get_advantages(agent0, buffer0, next_obs[:, 1, :], next_done)
 
     # flatten the batch
     b_advantages0 = advantages0.reshape(-1)

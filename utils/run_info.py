@@ -91,12 +91,17 @@ class InfoPlot:
             self.loss_plot += 1
     
     def add_loss_MARL(self, loss: float, agent: int) -> None:
-        
-        if self.loss_plot[agent] % 50 == 0:
-            self.logger.add_scalar(f"Train/Loss {agent}", loss[agent], self.loss_index[agent])
-            self.loss_index[agent] += 1
-        
-        self.loss_plot[agent] += 1
+        """
+        Add total loss of one agent to tensorboard
+        :param loss: numerical value for loss
+        :param agent: agent id 
+        """
+        if self.logger is not None:
+            if self.loss_plot[agent] % 50 == 0:
+                self.logger.add_scalar(f"Train/Loss {agent}", loss[agent], self.loss_index[agent])
+                self.loss_index[agent] += 1
+            
+            self.loss_plot[agent] += 1
         
         
     def add_test(self, reward: int | list[int], length: int) -> None:

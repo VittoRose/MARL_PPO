@@ -1,12 +1,13 @@
 import torch
 import numpy as np
+from grid_env.coverage import encode_action
 
 from .parameters import *
 
-def get_advantages(agent, buffer, next_obs, next_done, device) -> tuple[torch.tensor, torch.tensor]:
+def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, torch.tensor]:
     with torch.no_grad():
         next_value = agent.get_value(next_obs).reshape(1, -1)
-        advantages = torch.zeros_like(buffer.rewards).to(device)
+        advantages = torch.zeros_like(buffer.rewards)
         lastgaelam = 0
         for t in reversed(range(n_step)):
             if t == n_step- 1:
@@ -94,9 +95,9 @@ def test_network(update, agent0, agent1, test_env, logger):
     """
     Execute n complete run in a test enviroment without exploration
     """
-    if update % TEST_INTERVAL:
+    if update % TEST_INTERVAL == 0:
         
-        rew_data = np.zeros(2, TEST_RESET)
+        rew_data = np.zeros((2, TEST_RESET))
         len_data = np.zeros(TEST_RESET)
         
         # Collect data for 3 episode of test and log the mean reward and ep_lenght
@@ -110,8 +111,8 @@ def test_network(update, agent0, agent1, test_env, logger):
                 # Get action with argmax
                 with torch.no_grad():
                     test_state_tensor = torch.tensor(test_state)
-                    action = [agent0.get_action_test(test_state_tensor[0]).cpu().numpy(),
-                              agent1.get_action_test(test_state_tensor[1]).cpu().numpy()]
+                    action = encode_action(agent0.get_action_test(test_state_tensor[0]).cpu(),
+                                            agent1.get_action_test(test_state_tensor[1]).cpu())
                     
                 ns, _, ter, trun, rew = test_env.step(action)
                 test_reward[0] += rew[0]

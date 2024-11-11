@@ -1,6 +1,7 @@
 import numpy as np
 import gymnasium as gym
 from gymnasium import spaces
+import torch
 
 from .rewards import *
 
@@ -8,6 +9,27 @@ DTYPE = np.int8
 OBSTACLE = -1
 FREE = 0
 VISITED = 1
+
+def encode_action(action_0: torch.tensor, action_1: torch.tensor) -> list[int]:
+    """
+    Get the action from the two agents and encode in a single value for gym API
+    """    
+    val = np.arange(25).reshape(5, 5) 
+    
+    # If actions are scalar
+    if action_0.dim() == 0 and action_1.dim() == 0:
+        out = val[action_0.item(), action_1.item()]
+    
+    # If actions are tensor
+    elif action_0.dim() == 1 and action_1.dim() == 1:
+        if action_0.size() != action_1.size():
+            raise ValueError("action_0 e action_1 must have the same dimension")
+        
+        out = np.zeros(action_0.size(0))
+        for i in range(action_0.size(0)):
+            out[i] = val[action_0[i].item(), action_1[i].item()]
+        
+    return out
 
 class GridCoverage(gym.Env):
     """
@@ -91,14 +113,14 @@ class GridCoverage(gym.Env):
                     break 
 
             # Store agent position
-            self.agent_xy[0] = pos   
+            self.agent_xy[agent] = pos   
         
         obs = self._get_obs()
         
         return obs, {}
 
 
-    def step(self, action: list[int] | int) -> tuple[tuple[np.array], tuple[int], bool, bool, None]:
+    def step(self, action: int) -> tuple[tuple[np.array], tuple[int], bool, bool, None]:
         """
         Check documentation for reward
         Action: 0 -> Hold
@@ -115,10 +137,12 @@ class GridCoverage(gym.Env):
         reward = {0: 0, 1: 0}
 
         terminated, truncated = False, False
+        
+        actions = [action//5, action%5]
 
         for agent in range(self.n_agent):
             
-            act = action[agent]
+            act = actions[agent]
 
             skip, key = self.act2key(act)
             
