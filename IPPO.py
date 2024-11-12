@@ -9,14 +9,12 @@ from IPPO.utils.run_info import InfoPlot
 from IPPO.utils.util_function import make_env
 import IPPO.algo as IPPO
 
-strange_code = (1, 2, 3, 4, 5, 6, 7, 14, 21, 28, 35, 42)
-
 # Run name for logger, use None if no logger is needed
-name = None
+name = "Debug_00"
 
 # Tensorboard Summary writer
 gym_id = "GridCoverage-v0"
-logger = InfoPlot(gym_id, name, "cpu", "IPPO")
+logger = InfoPlot(gym_id, name, "cpu", folder="logs/")
 
 # Environments for training and
 envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=2) for _ in range(N_ENV)])
@@ -65,11 +63,7 @@ for epoch in range(0, MAX_EPOCH):
 
         # Execute action in environment
         next_obs, code_reward, truncated, terminated, _ = envs.step(action)
-        
-        for it in code_reward:
-            if it in strange_code:
-                print(f"\n Strange code: {it}")
-            
+                    
         reward0, reward1 = decode_reward(code_reward)
         
         done = terminated | truncated

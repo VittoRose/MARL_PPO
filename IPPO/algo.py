@@ -5,6 +5,10 @@ from grid_env.coverage import encode_action, decode_reward
 from .parameters import *
 
 def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, torch.tensor]:
+    """
+    Get advantage and return value based on the interaction with the environment
+    """
+    
     with torch.no_grad():
         next_value = agent.get_value(next_obs).reshape(1, -1)
         advantages = torch.zeros_like(buffer.rewards)
@@ -84,7 +88,7 @@ def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, 
 
         # Global loss function
         loss = pg_loss - ENTROPY_COEF*entropy_loss + VALUE_COEFF*v_loss
-        logger.add_loss_MARL(loss.item(), agent_id)
+        logger.add_loss(loss.item(), agent_id)
         
         optimizer.zero_grad()
         loss.backward()
@@ -95,6 +99,7 @@ def test_network(update, agent0, agent1, test_env, logger):
     """
     Execute n complete run in a test enviroment without exploration
     """
+    
     if update % TEST_INTERVAL == 0:
         
         rew_data = np.zeros((2, TEST_RESET))

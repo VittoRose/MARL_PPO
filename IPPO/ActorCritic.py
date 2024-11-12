@@ -26,10 +26,11 @@ class Agent(nn.Module):
         self.actor = make_actor(self.obs_shape, self.action_shape, init_layer)
 
     def get_value(self, x):
+        """ Return the value of the current state """
         return self.critic(x)
 
     def get_action_and_value(self, x, action=None, train: bool=True):
-
+        """ TODO. non ho voglia adesso"""
         logits = self.actor(x)
         probs = Categorical(logits=logits)
         if action is None:
@@ -38,8 +39,13 @@ class Agent(nn.Module):
         return action, probs.log_prob(action), probs.entropy(), self.critic(x)
 
     def get_action_test(self, x) -> int:
-        logits = self.actor(x)
-        action = torch.argmax(logits)
+        """ 
+        Get the action from the current state,
+        return the action with the max probability from the policy
+        """
+        
+        policy_out = self.actor(x)
+        action = torch.argmax(policy_out)
 
         return action             
     

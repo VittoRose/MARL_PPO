@@ -1,5 +1,5 @@
-from PPO.parameters import *
-from PPO.ActorCritic import neurons, activation_fn, hidden_layer
+from IPPO.parameters import *
+from IPPO.ActorCritic import neurons, activation_fn, hidden_layer
 from time import time
 
 def create_md_summary(gym_id: str, name: str, folder: str, seed: float, device: str)-> None:
@@ -48,7 +48,7 @@ def complete_md_summary(folder: str, name: str, starting_time: float) -> None:
     """
     report = folder + name + ".md"
     end_time = time()
-    min = (end_time - starting_time)/60
-    sec = (end_time - starting_time)%60
+    min = (end_time - starting_time) / 60
+    sec = (end_time - starting_time) % 60
     with open(report, 'a') as file:
         file.write(f"\nTotal time: {min:.0f} min {sec:.0f} sec\n")
