@@ -8,3 +8,4 @@ print(a.size)
 
 for i in range(a.shape):
     print(i)
+

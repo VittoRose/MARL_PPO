@@ -22,18 +22,15 @@ gym_id = "GridCoverage-v0"
 # Tensorboard Summary writer
 logger = InfoPlot(gym_id, name, "cpu", "IPPO")
 
-# Vector environment object
+# Environments for training and
 envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=2) for _ in range(n_env)])
-#envs = VectorEnv([GridCoverage(n_agent=2,map_id=1) for _ in range(n_env)])
-
-# envs = gym.make(gym_id, n_agent=2, map_id=1)
 test_env = gym.make(gym_id, n_agent=2, map_id=1)
 
 # Enviroment spaces
 obs_shape = 33
 action_shape = 5
 
-# Agents network and compagnia bella
+# Agents network and friend
 agent0 = Agent(obs_shape, action_shape)
 agent1 = Agent(obs_shape, action_shape)
 
@@ -51,6 +48,7 @@ next_done = torch.zeros(n_env)
 
 for epoch in range(0, MAX_EPOCH):
     
+    
     # Progress bar
     logger.show_progress(epoch)
 
@@ -60,6 +58,9 @@ for epoch in range(0, MAX_EPOCH):
     # Collect data from the environment
     for step in range(0, n_step):
         
+        if epoch == 489 and step == 61:
+            print("Start debug")
+
         buffer0.update(next_obs[:,0,:], next_done, step)
         buffer1.update(next_obs[:,1,:], next_done, step)
 
@@ -73,6 +74,13 @@ for epoch in range(0, MAX_EPOCH):
         # Execute action in environment
         # TODO: solve step 
         next_obs, _, truncated, terminated, reward = envs.step(action)
+        
+        # try:
+        #     a = reward[0]
+        # except:
+        #     print("Error catch, reward:", reward)
+        #     print("Epoch", epoch)
+        
         done = terminated | truncated
 
         buffer0.store(value0, action0, logprob0, reward[0], step)

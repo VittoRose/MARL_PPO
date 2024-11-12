@@ -65,7 +65,7 @@ class GridCoverage(gym.Env):
         )
 
         if self.n_agent == 2:
-            self.action_space = spaces.MultiDiscrete([5,5])
+            self.action_space = spaces.Discrete(25)
         else:
             self.action_space = spaces.Discrete(5)
             
@@ -117,7 +117,7 @@ class GridCoverage(gym.Env):
         
         obs = self._get_obs()
         
-        return obs, {}
+        return obs, {0: 0, 0: 1}
 
 
     def step(self, action: int) -> tuple[tuple[np.array], tuple[int], bool, bool, None]:
