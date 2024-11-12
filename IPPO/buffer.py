@@ -3,28 +3,18 @@ from .parameters import *
 
 class Buffer():
 
-    def __init__(self, observation_shape: int, action_shape: int): #, device: torch.device):
+    def __init__(self, observation_shape: int, action_shape: int):
 
         self.obs_shape = (observation_shape,)
         self.action_shape = action_shape
-        
-        
-        # self.device = device
 
         # Preallocation
-        # self.obs = torch.zeros((n_step, n_env) + self.obs_shape).to(device)
-        # self.actions = torch.zeros((n_step, n_env)).to(device)
-        # self.logprobs = torch.zeros((n_step, n_env)).to(device)
-        # self.rewards = torch.zeros((n_step, n_env)).to(device)
-        # self.dones = torch.zeros((n_step, n_env)).to(device)
-        # self.values = torch.zeros((n_step, n_env)).to(device)
-        # Preallocation
-        self.obs = torch.zeros((n_step, n_env) + self.obs_shape)
-        self.actions = torch.zeros((n_step, n_env))
-        self.logprobs = torch.zeros((n_step, n_env))
-        self.rewards = torch.zeros((n_step, n_env))
-        self.dones = torch.zeros((n_step, n_env))
-        self.values = torch.zeros((n_step, n_env))
+        self.obs = torch.zeros((N_STEP, N_ENV) + self.obs_shape)
+        self.actions = torch.zeros((N_STEP, N_ENV))
+        self.logprobs = torch.zeros((N_STEP, N_ENV))
+        self.rewards = torch.zeros((N_STEP, N_ENV))
+        self.dones = torch.zeros((N_STEP, N_ENV))
+        self.values = torch.zeros((N_STEP, N_ENV))
 
     def update(self, next_obs, next_done, step):
         """
@@ -41,7 +31,6 @@ class Buffer():
         self.actions[step] = action.squeeze()
         self.logprobs[step] = logprob.squeeze()
         self.rewards[step] = torch.tensor(reward)
-        # self.rewards[step] = torch.tensor(reward).to(self.device)
 
     def get_batch(self):
         b_obs = self.obs.reshape((-1,) + self.obs_shape)

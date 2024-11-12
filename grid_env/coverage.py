@@ -31,6 +31,57 @@ def encode_action(action_0: torch.tensor, action_1: torch.tensor) -> list[int]:
         
     return out
 
+def encode_reward(reward_key: list[str, str], terminated: bool) -> int:
+    """
+    Get two reward value and encode in a single value for gym api
+    """
+    grid = np.arange(49).reshape(7,7)
+    
+    code_reward = grid[reward_code[reward_key[0]], reward_code[reward_key[1]] ]
+    
+    # If terminated set code as negative 
+    if terminated:
+        code_reward = -code_reward
+    
+    return code_reward
+
+def decode_reward(code_reward: int| list[int]) -> tuple[int|list[int], int|list[int]]:
+    """
+    Get the reward scalar value from env.step() and get the reward for each robot
+    """
+    
+    if isinstance(code_reward, np.ndarray):
+        rewards1 = []
+        rewards2 = []
+        
+        # Recursive call for each item
+        for reward in code_reward:
+            r1, r2 = decode_reward(reward)
+            rewards1.append(r1)
+            rewards2.append(r2)
+            
+        return rewards1, rewards2
+    
+    all_covered = False
+
+    # If the code is negative all tiles are covered
+    if code_reward < 0:
+        all_covered = True
+        code_reward = -code_reward
+    
+    index0 = code_reward // 7
+    index1 = code_reward % 7
+    
+    reward1 = rewards[reward_decoder[index0]]
+    reward2 = rewards[reward_decoder[index1]]
+    
+    # Add the shared reward
+    if all_covered:
+        reward1 += rewards["all_covered"]
+        reward2 += rewards["all_covered"]
+        
+    return reward1 , reward2
+
 class GridCoverage(gym.Env):
     """
     Class that contain the rules for the multi agent enviroment
@@ -79,7 +130,7 @@ class GridCoverage(gym.Env):
             "right": [0, 1],
             "left": [0, -1]
         }
-
+        
     def reset(self, seed = None, options = None):
         """
         Set all the tiles to not visited and create obstacle
@@ -117,7 +168,7 @@ class GridCoverage(gym.Env):
         
         obs = self._get_obs()
         
-        return obs, {0: 0, 0: 1}
+        return obs, {}
 
 
     def step(self, action: int) -> tuple[tuple[np.array], tuple[int], bool, bool, None]:
@@ -134,11 +185,13 @@ class GridCoverage(gym.Env):
         # if type(action) != list:
         #     action = [action]
         
-        reward = {0: 0, 1: 0}
-
         terminated, truncated = False, False
         
-        actions = [action//5, action%5]
+        # Get the action from the table
+        if self.n_agent == 2:
+            actions = [action//5, action%5]
+        
+        rew_key = ["", ""]
 
         for agent in range(self.n_agent):
             
@@ -149,16 +202,17 @@ class GridCoverage(gym.Env):
             # Execute action and get the reward
             if not skip:
                 if self.obstacle(self.agent_xy[agent], self.offsets[key]):
-                    reward[agent] += CONTACT
+                    rew_key[agent] = "contact"
                 
                 elif self.out(self.agent_xy[agent], self.offsets[key]):
-                    reward[agent] += OUT
+                    rew_key[agent] = "out"
                 
                 elif self.collision(self.agent_xy[agent], self.offsets[key], agent) and self.n_agent > 1:
-                    reward[agent] += COLLISION
+                    rew_key[agent] = "collision"
                 
                 elif self.visited(self.agent_xy[agent], self.offsets[key]):
-                    reward[agent] += TILE_COVERED
+                    rew_key[agent] = "tile_covered"
+
                     # Move agent
                     self.agent_xy[agent] += self.offsets[key]
                     # Set new position as visited from this agent
@@ -166,7 +220,7 @@ class GridCoverage(gym.Env):
                     self.grid[to_update[0], to_update[1]] = VISITED + agent
                 
                 else:
-                    reward[agent] += TILE_NOT_COVERED
+                    rew_key[agent] = "tile_not_covered"
                     # Move agent
                     self.agent_xy[agent] += self.offsets[key]
                     
@@ -174,22 +228,23 @@ class GridCoverage(gym.Env):
                     to_update = np.asarray(self.agent_xy[agent])
                     self.grid[to_update[0], to_update[1]] = VISITED + agent
             else:
-                reward[agent] += -2
-                
+                rew_key[agent] = "still"
+        
         # Check if all tiles are covered
         if self.get_coverage().sum() >= self.max_grid:
-            reward[0] += ALL_COVERED
-            reward[1] += ALL_COVERED
             terminated = True
         
-        rew = 0
-        if self.n_agent == 1:
-            rew = reward[0]
+        if self.n_agent == 2:
+            reward: int = encode_reward(rew_key, terminated)
+        else:
+            reward: int = reward_code[rew_key[0]]
+            if terminated:
+                reward += rewards["all_covered"]
 
         # Prepare out variable
         obs = self._get_obs()
         
-        return obs, rew, terminated, truncated, reward
+        return obs, reward, terminated, truncated, {}
     
     def _get_obs(self) -> np.array:
         """

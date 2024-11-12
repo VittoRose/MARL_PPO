@@ -20,8 +20,8 @@ def create_md_summary(gym_id: str, name: str, folder: str, seed: float, device: 
         file.write("\n## Training parameters\n\n")
 
         file.write(f"- Total epoch: {MAX_EPOCH}\n")
-        file.write(f"- Number of environments: {n_env}\n")
-        file.write(f"- Timestep for collecting data T = {n_step}\n")
+        file.write(f"- Number of environments: {N_ENV}\n")
+        file.write(f"- Timestep for collecting data T = {N_STEP}\n")
         file.write(f"- Epoch for test: {TEST_INTERVAL} with {TEST_RESET} tests each time\n")
         file.write(f"- Total data for each loop: {BATCH_SIZE}\n")
         file.write(f"- Update epoch K = {K_EPOCHS}\n")

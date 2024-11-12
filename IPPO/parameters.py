@@ -1,8 +1,8 @@
 
 # Training parameters
-n_env = 4
-n_step = 128                    # Number of step in the environment between each update
-BATCH_SIZE = n_env*n_step       # Data collected for each update
+N_ENV = 4
+N_STEP = 128                    # Number of step in the environment between each update
+BATCH_SIZE = N_ENV*N_STEP       # Data collected for each update
 MAX_EPOCH = 8_000               # Total epoch for training
 
 # Hyperparameters
@@ -21,7 +21,7 @@ VALUE_NORM = True
 if BATCH_SIZE % K_EPOCHS != 0:
     raise ValueError("Batch size and K_epochs are not compatible")
 
-MINI_BATCH_SIZE = BATCH_SIZE//K_EPOCHS      # Be careful here
+MINI_BATCH_SIZE = BATCH_SIZE // K_EPOCHS      # Be careful here
 
 SEED = 0
 

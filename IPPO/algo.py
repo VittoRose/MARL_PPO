@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from grid_env.coverage import encode_action
+from grid_env.coverage import encode_action, decode_reward
 
 from .parameters import *
 
@@ -9,8 +9,8 @@ def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, to
         next_value = agent.get_value(next_obs).reshape(1, -1)
         advantages = torch.zeros_like(buffer.rewards)
         lastgaelam = 0
-        for t in reversed(range(n_step)):
-            if t == n_step- 1:
+        for t in reversed(range(N_STEP)):
+            if t == N_STEP - 1:
                 nextnonterminal = 1.0 - next_done.int()
                 nextvalues = next_value
             else:
@@ -114,9 +114,12 @@ def test_network(update, agent0, agent1, test_env, logger):
                     action = encode_action(agent0.get_action_test(test_state_tensor[0]).cpu(),
                                             agent1.get_action_test(test_state_tensor[1]).cpu())
                     
-                ns, _, ter, trun, rew = test_env.step(action)
-                test_reward[0] += rew[0]
-                test_reward[1] += rew[1]
+                ns, rew, ter, trun, _ = test_env.step(action)
+                
+                rew0, rew1, = decode_reward(rew)
+                
+                test_reward[0] += rew0
+                test_reward[1] += rew1
                 test_state = ns
                 ep_len +=1
 
