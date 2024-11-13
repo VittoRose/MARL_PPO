@@ -16,7 +16,7 @@ ENTROPY_COEF = 0.01             # Entropy coefficient for loss calculation
 VALUE_COEFF = 0.5               # Value coefficient for loss calculation
 
 VALUE_CLIP = False
-VALUE_NORM = True
+VALUE_NORM = False
 
 if BATCH_SIZE % K_EPOCHS != 0:
     raise ValueError("Batch size and K_epochs are not compatible")
