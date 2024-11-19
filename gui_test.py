@@ -3,14 +3,29 @@ import torch
 import numpy as np
 from grid_env.coverage import GridCoverage, decode_reward, encode_action
 from grid_env.gui import GUI
+from IPPO.ActorCritic import Agent
 
-# plotjugger
-# Run a demo of the gui where the agents move random
+path0 = "Saved_agents/Agent_0.pth"
+path1 = "Saved_agents/Agent_1.pth"
+
+obs_shape = 33
+action_shape = 5
+
+
+agent0 = Agent(obs_shape, action_shape)
+agent1 = Agent(obs_shape, action_shape)
+
+agent0.eval()
+agent1.eval()
+
+agent0.load(path0)
+agent1.load(path1)
+
 if __name__ == "__main__":
     import time
 
     env = GridCoverage(2,1)
-    env.reset()
+    state, _ = env.reset()
     screen = GUI(env)
     run = True
 
@@ -21,10 +36,10 @@ if __name__ == "__main__":
             if event.type == pg.QUIT:
                 run = False
                 
-        a1 = np.random.randint(5)
-        a2 = np.random.randint(5)
+        a1 = agent0.get_action_test(torch.as_tensor(state[0]))
+        a2 = agent1.get_action_test(torch.as_tensor(state[1]))
 
         action = encode_action(torch.tensor(a1), torch.tensor(a2))
-        _, reward, _, _, _ =  env.step(action)
+        state, reward, _, _, _ =  env.step(action)
         
         screen.update(env, [a1,a2])
