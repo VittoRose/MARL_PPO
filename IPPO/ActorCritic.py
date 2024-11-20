@@ -29,8 +29,12 @@ class Agent(nn.Module):
         """ Return the value of the current state """
         return self.critic(x)
 
-    def get_action_and_value(self, x, action=None, train: bool=True):
-        """ TODO. non ho voglia adesso"""
+    def get_action_and_value(self, x, action=None):
+        """
+        Get the action, log(probs), entropy(probs), value of the current state
+        if action is None return the probability of the action chosen for the state
+        if action is not none return the probability of that action
+        """
         logits = self.actor(x)
         probs = Categorical(logits=logits)
         if action is None:

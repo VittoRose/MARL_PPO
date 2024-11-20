@@ -5,8 +5,8 @@ import grid_env                             # Import for registration
 from PPO.buffer import Buffer
 from PPO.ActorCritic import Agent
 from PPO.parameters import *
-from utils.run_info import InfoPlot
-from utils.util_function import make_env
+from PPO.utils.run_info import InfoPlot
+from PPO.utils.util_function import make_env
 import PPO.algo as PPO
 
 name = None

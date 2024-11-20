@@ -39,7 +39,7 @@ if __name__ == "__main__":
         a1 = agent0.get_action_test(torch.as_tensor(state[0]))
         a2 = agent1.get_action_test(torch.as_tensor(state[1]))
 
-        action = encode_action(torch.tensor(a1), torch.tensor(a2))
+        action = encode_action(a1, a2)
         state, reward, _, _, _ =  env.step(action)
         
         screen.update(env, [a1,a2])
