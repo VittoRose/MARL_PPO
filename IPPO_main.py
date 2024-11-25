@@ -57,7 +57,7 @@ for epoch in range(0, MAX_EPOCH):
         # Get action and value from current state
         with torch.no_grad():
             action0, logprob0, _, value0 = agent0.get_action_and_value(next_obs[:,0,:])
-            action1, logprob1, _, value1 = agent1.get_action_and_value(next_obs[:,0,:])
+            action1, logprob1, _, value1 = agent1.get_action_and_value(next_obs[:,1,:])
             
             action = encode_action(action0.cpu(), action1.cpu())
 
