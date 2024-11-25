@@ -33,7 +33,7 @@ def update_network(agent, optimizer, buffer, b_advantages, b_returns, logger, ag
     index = np.arange(BATCH_SIZE)
 
     # Update networks K times
-    for i in range(K_EPOCHS):
+    for _ in range(K_EPOCHS):
 
         # Shuffle index to break correlations
         np.random.shuffle(index)

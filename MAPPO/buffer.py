@@ -6,19 +6,23 @@ class Buffer():
     Rollout buffer for PPO algorithm
     """
     
-    def __init__(self, observation_shape: int, action_shape: int):
+    def __init__(self, observation_shape: int, critic_observation_space: int, action_shape: int, n_agents: int):
         
-        self.obs_shape = (observation_shape,)
+        self.obs_shape = observation_shape
+        self.critic_shape = critic_observation_space
+        self.n_agents = n_agents
         self.action_shape = action_shape
-
+        
         # Preallocation
-        self.obs = torch.zeros((N_STEP, N_ENV) + self.obs_shape)
-        self.actions = torch.zeros((N_STEP, N_ENV))
-        self.logprobs = torch.zeros((N_STEP, N_ENV))
-        self.rewards = torch.zeros((N_STEP, N_ENV))
-        self.dones = torch.zeros((N_STEP, N_ENV))
-        self.values = torch.zeros((N_STEP, N_ENV))
-
+        self.obs = torch.zeros((N_STEP+1, N_ENV, n_agents, observation_shape), dtype=torch.float32)
+        
+        self.actions = torch.zeros((N_STEP, N_ENV, n_agents, action_shape), dtype=torch.float32)
+        self.actions_log_prob = torch.zeros((N_STEP, N_ENV, n_agents, action_shape), dtype=torch.float32)
+        self.rewards = torch.zeros((N_STEP, N_ENV, n_agents, 1), dtype=torch.float32)
+        self.dones = torch.zeros((N_STEP+1, N_ENV, 1), dtype=torch.float32)
+        
+        self.value_pred = torch.zeros((N_STEP+1, N_ENV, 1), dtype=torch.float32)
+        
     def update(self, next_obs, next_done, step):
         """
         Update state and dones for the current step
@@ -39,7 +43,7 @@ class Buffer():
             self.values[step] = value.flatten()
         
         self.actions[step] = action.squeeze()
-        self.logprobs[step] = logprob.squeeze()
+        self.actions_log_prob[step] = logprob.squeeze()
         self.rewards[step] = torch.tensor(reward)
 
     def get_batch(self):

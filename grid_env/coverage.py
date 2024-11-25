@@ -10,6 +10,20 @@ OBSTACLE = -1
 FREE = 0
 VISITED = 1
 
+def get_critic_state(state: np.ndarray) -> np.ndarray:
+    """
+    Use the state from the two agents to get the centralized critic state
+    """
+    
+    critic_state = np.zeros(37)
+    
+    critic_state[0:4] = state[0, 0:4]
+    critic_state[4:8] = state[0, 4:8]
+    critic_state[8:12] = state[1, 4:8]
+    critic_state[12:] = state[0, 8:]
+    
+    return torch.tensor(critic_state)
+
 def encode_action(action_0: torch.tensor, action_1: torch.tensor) -> list[int]:
     """
     Get the action from the two agents and encode in a single value for gym API

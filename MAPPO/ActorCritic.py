@@ -1,11 +1,12 @@
 import torch.nn as nn
+import torch
 from torch.distributions.categorical import Categorical
 
 # Number of hidden layer, neurons and activation funcion are defined in parameters.py
-from parameters import N_LAYER, N_NEURONS, ACT_FN
+from .parameters import N_LAYER, N_NEURONS, ACT_FN
 
 def init(module, weight_init, bias_init, gain=1):
-    """ Init for weight an bias """
+    """ Init for weight and bias """
      
     weight_init(module.weight.data, gain=gain)
     if module.bias is not None:
@@ -112,3 +113,36 @@ class Critic(nn.Module):
         x = self.base(obs)
         out = self.last(x)
         return out
+    
+class Networks():
+    """
+    Wrappers for Actor and Critic networks
+    """
+    
+    def __init__(self, state_dim, action_dim, critic_state_dim, lr_list, device=torch.device("cpu")):
+        
+        self.state_dim = state_dim
+        self.critic_state_dim = critic_state_dim
+        
+        self.actor = Actor(self.state_dim, action_dim)
+        self.critic = Critic(self.critic_state_dim)
+        
+        self.actor_optim = torch.optim.Adam(self.actor.parameters(), lr=lr_list[0])
+        self.critic_optim = torch.optim.Adam(self.critic.parameters(), lr=lr_list[1])
+        
+    def get_action_value(self, states, critic_state):
+        """
+        Evaluate the current state with actor and critic network
+        """
+        
+        actions = torch.zeros(2)
+        logprobs = torch.zeros(2)
+        
+        for i, state in enumerate(states):
+            action, logprob, _ = self.actor.get_action(state)
+            actions[i] = action
+            logprobs[i] = logprob 
+        
+        values = self.critic(critic_state)
+        
+        return action, logprob, values
