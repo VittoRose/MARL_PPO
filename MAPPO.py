@@ -1,13 +1,15 @@
+# MAPPO with parameter sharing
+
 import gymnasium as gym
 import torch
 from grid_env.coverage import encode_action, decode_reward
 
-from Param_sharing.buffer import Buffer
-from IPPO.ActorCritic import Agent
-from Param_sharing.parameters import *
-from Param_sharing.utils.run_info import InfoPlot
-from Param_sharing.utils.util_function import make_env
-import Param_sharing.algo as PS
+from MAPPO.buffer import Buffer
+from MPPO.ActorCritic import Agent
+from MAPPO.parameters import *
+from MAPPO.utils.run_info import InfoPlot
+from MAPPO.utils.util_function import make_env
+import MAPPO.algo as PS
 
 # Run name for logger, use None if no logger is needed
 name = None
@@ -20,7 +22,7 @@ logger = InfoPlot(gym_id, name, "cpu", folder="logs/")
 envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=2) for _ in range(N_ENV)])
 test_env = gym.make(gym_id, n_agent=2, map_id=1)
 
-# Enviroment spaces
+# Environment spaces
 obs_shape = 33
 action_shape = 5
 

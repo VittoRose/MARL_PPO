@@ -1,3 +1,10 @@
+from torch.nn import Tanh
+
+# Network parameters
+N_LAYER = 2                     # Number of hidden layer
+N_NEURONS = 64                  # Number of neurons for each layer
+ACT_FN = Tanh()                 # Activation function
+
 
 # Training parameters
 N_ENV = 4
