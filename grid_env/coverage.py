@@ -174,7 +174,6 @@ class GridCoverage(gym.Env):
             n_obstacle = -self.grid.sum()
             self.max_grid = self.w*self.h - n_obstacle
             
-            print("MAX GRID: ", self.max_grid)
         else:
             raise ValueError("Map not available")
         
@@ -257,9 +256,7 @@ class GridCoverage(gym.Env):
         # Check if all tiles are covered
         if self.get_coverage().sum() >= self.max_grid:
             terminated = True
-        
-        print("Grid_value: ", self.get_coverage().sum())
-        
+                
         if self.n_agent == 2:
             reward: int = encode_reward(rew_key, terminated)
         else:

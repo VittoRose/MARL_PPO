@@ -40,7 +40,7 @@ next_obs, _ = envs.reset()
 next_obs = torch.tensor(next_obs)
 next_done = torch.zeros(N_ENV)
 
-for epoch in range(0, MAX_EPOCH):
+for epoch in range(0, 2):
     
     # Progress bar
     logger.show_progress(epoch)
@@ -84,6 +84,10 @@ for epoch in range(0, MAX_EPOCH):
 
     IPPO.update_network(agent0, optimizer0, buffer0, b_advantages0, b_returns0, logger, 0)
     IPPO.update_network(agent1, optimizer1, buffer1, b_advantages1, b_returns1, logger, 1)
+
+# Save agents    
+agent0.save_actor("Agent_0")
+agent1.save_actor("Agent_1")
 
 test_env.close()     
 envs.close()

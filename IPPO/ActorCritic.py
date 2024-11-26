@@ -58,11 +58,17 @@ class Agent(nn.Module):
             os.mkdir("Saved_agents/")
         
         agent_path = "Saved_agents/" + name + ".pth"
-
+        
+        if os.path.exists(agent_path):
+            print("Save name changed, new name:")
+            while os.path.exists(agent_path):
+                rng = np.random.randint(50)
+                agent_path = "Saved_agents/" + name + "_" + str(rng) + ".pth"
+            print(agent_path)
+            
         torch.save(self.actor.state_dict(), agent_path)
 
     def load(self, name:str) -> None:
-
         checkpoint = torch.load(name)
         self.actor.load_state_dict(checkpoint)
 
