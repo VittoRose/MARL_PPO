@@ -11,13 +11,13 @@ gymnasium 1.0.0
 
 ## Multi Agent Grid Coverage
 
-This environment was created in order to try different approach of multi agent algorithm. The environment work like the vacuum environment [here](https://youtu.be/qgb0gyrpiGk). 
+This environment was created in order to try different approach of multi agent algorithm. The environment work like the vacuum environment [here](https://youtu.be/qgb0gyrpiGk).
 The environment was created using gymnasium API and i provided a Jupiter Notebook (environment-example.ipynb) to explain the usage with example.
 
 ### Usage
 
 * To train a network for a single agent job run *Single_agent.py*
-* To train two agents with Independent PPO (IPPO) run *IPPO_main.py* 
+* To train two agents with Independent PPO (IPPO) run *IPPO_main.py*
 
 ### After training
 

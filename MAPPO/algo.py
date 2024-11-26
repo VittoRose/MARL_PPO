@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from grid_env.coverage import encode_action, decode_reward
+from grid_env.coverage import encode_action, decode_reward, get_critic_state
 
 from .parameters import *
 
@@ -10,7 +10,8 @@ def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, to
     """
     
     with torch.no_grad():
-        next_value = agent.get_value(next_obs).reshape(1, -1)
+        critic_state = get_critic_state(next_obs, N_ENV)
+        next_value = agent.get_value(critic_state).reshape(1, -1)
         advantages = torch.zeros_like(buffer.rewards)
         lastgaelam = 0
         for t in reversed(range(N_STEP)):
@@ -19,14 +20,14 @@ def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, to
                 nextvalues = next_value
             else:
                 nextnonterminal = 1.0 - buffer.dones[t + 1].int()
-                nextvalues = buffer.values[t + 1]
-            delta = buffer.rewards[t] + GAMMA * nextvalues * nextnonterminal - buffer.values[t]
+                nextvalues = buffer.value_pred[t + 1]
+            delta = buffer.rewards[t] + GAMMA * nextvalues * nextnonterminal - buffer.value_pred[t]
             advantages[t] = lastgaelam = delta + GAMMA * GAE_LAMBDA * nextnonterminal * lastgaelam
-        returns = advantages + buffer.values
+        returns = advantages + buffer.value_pred
 
     return advantages, returns
 
-def update_network(agent, optimizer, buffer, b_advantages, b_returns, logger, agent_id):
+def update_network(agent, optimizer, buffer, b_advantages, b_returns, logger):
     """
     Update network K times with the same experience divided in mini batches
     """
@@ -38,10 +39,10 @@ def update_network(agent, optimizer, buffer, b_advantages, b_returns, logger, ag
         # Shuffle index to break correlations
         np.random.shuffle(index)
         
-        update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index, agent_id)
+        update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index)
 
 
-def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index, agent_id) -> None:
+def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index, agent_id = 0) -> None:
     """
     Update actor and critic network using mini_batches from buffer 
     """

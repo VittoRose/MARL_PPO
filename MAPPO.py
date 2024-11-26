@@ -9,7 +9,7 @@ from MAPPO.ActorCritic import Networks
 from MAPPO.parameters import *
 from MAPPO.utils.run_info import InfoPlot
 from MAPPO.utils.util_function import make_env
-import MAPPO.algo as PS
+import MAPPO.algo as MAPPO
 
 # Run name for logger, use None if no logger is needed
 name = None
@@ -46,13 +46,15 @@ for epoch in range(0, MAX_EPOCH):
     
     # Collect data from the environment
     for step in range(0, N_STEP):
+        
+        buffer.update(next_obs, next_done, step)
 
         # Get action and value from current state
         with torch.no_grad():
             state_list = [next_obs[:,i,:] for i in range(2)]
             states = torch.stack(state_list)
-            critic_state = get_critic_state(next_obs)
-            actions, logprob0, _, value0 = actor_critic.get_action_value(states, critic_state)
+            critic_state = get_critic_state(next_obs, N_ENV)
+            actions, logprob, value = actor_critic.get_action_value(states, critic_state)
             
             action = encode_action(actions[0].cpu(), actions[1].cpu())
 
@@ -62,9 +64,12 @@ for epoch in range(0, MAX_EPOCH):
         reward0, reward1 = decode_reward(code_reward)
         done = terminated | truncated
 
-        buffer.store()
-
-
+        buffer.store(value, actions, logprob, (reward0, reward1), step)
+        
+        next_obs, next_done = torch.tensor(next_obs), torch.tensor(done)
+        
+        advantages, returns = MAPPO.get_advantages(actor_critic, buffer, next_obs, next_done)
+        
 test_env.close()                
 envs.close()
 logger.close()

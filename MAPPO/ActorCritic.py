@@ -3,7 +3,7 @@ import torch
 from torch.distributions.categorical import Categorical
 
 # Number of hidden layer, neurons and activation funcion are defined in parameters.py
-from .parameters import N_LAYER, N_NEURONS, ACT_FN
+from .parameters import N_LAYER, N_NEURONS, ACT_FN, N_ENV
 
 def init(module, weight_init, bias_init, gain=1):
     """ Init for weight and bias """
@@ -91,7 +91,7 @@ class Actor(nn.Module):
         if action is None:
             action = probs.sample()
             
-        return action, action.log_prob(action), probs.entropy
+        return action, probs.log_prob(action), probs.entropy
         
 class Critic(nn.Module):
     """
@@ -135,9 +135,10 @@ class Networks():
         Evaluate the current state with actor and critic network
         """
         
-        actions = torch.zeros(2)
-        logprobs = torch.zeros(2)
+        actions = torch.zeros(2, N_ENV)
+        logprobs = torch.zeros(2, N_ENV)
         
+        # Select the action for each agent with the same actor
         for i, state in enumerate(states):
             action, logprob, _ = self.actor.get_action(state)
             actions[i] = action
@@ -145,4 +146,16 @@ class Networks():
         
         values = self.critic(critic_state)
         
-        return action, logprob, values
+        return actions, logprobs, values
+    
+    def get_value(self, critic_state):
+        """ Get the value prediction from the current state """
+        return self.critic(critic_state)
+    
+    def evaluate_action(self, state, actions, critic_state):
+        """ Evaluate action and value for the given state, no action output"""
+        
+        logits = self.actor(state)
+        probs = Categorical(logits=logits)
+        
+        return probs.log_prob(actions), probs.entropy(), self.critic(critic_state)
