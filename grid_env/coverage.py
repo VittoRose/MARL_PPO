@@ -10,10 +10,18 @@ OBSTACLE = -1
 FREE = 0
 VISITED = 1
 
-def get_critic_state(state: np.ndarray) -> np.ndarray:
+def get_critic_state(state: torch.tensor, n_env: int) -> torch.tensor:
     """
     Use the state from the two agents to get the centralized critic state
     """
+    
+    # Check if the state comes from one env or multiple envs
+    if state.size(dim=0) == n_env:
+        critic_states = torch.zeros((n_env, 37))
+        for i,s in enumerate(state):
+            critic_states[i] = get_critic_state(s,4)
+        
+        return critic_states
     
     critic_state = np.zeros(37)
     
@@ -41,7 +49,7 @@ def encode_action(action_0: torch.tensor, action_1: torch.tensor) -> list[int]:
         
         out = np.zeros(action_0.size(0))
         for i in range(action_0.size(0)):
-            out[i] = val[action_0[i].item(), action_1[i].item()]
+            out[i] = val[action_0[i].int().item(), action_1[i].int().item()]
         
     return out
 
@@ -164,7 +172,9 @@ class GridCoverage(gym.Env):
             
             # Min and max value from the grid
             n_obstacle = -self.grid.sum()
-            self.max_grid = self.w*self.h - 2*n_obstacle
+            self.max_grid = self.w*self.h - n_obstacle
+            
+            print("MAX GRID: ", self.max_grid)
         else:
             raise ValueError("Map not available")
         
@@ -247,6 +257,8 @@ class GridCoverage(gym.Env):
         # Check if all tiles are covered
         if self.get_coverage().sum() >= self.max_grid:
             terminated = True
+        
+        print("Grid_value: ", self.get_coverage().sum())
         
         if self.n_agent == 2:
             reward: int = encode_reward(rew_key, terminated)
@@ -366,7 +378,7 @@ class GridCoverage(gym.Env):
         # Sobstitute obstacle value with not visited
         temp[temp == OBSTACLE] = 0
         temp[temp >= VISITED] = VISITED
-
+        
         return temp
     
     def out(self, pos, offset) -> bool:
