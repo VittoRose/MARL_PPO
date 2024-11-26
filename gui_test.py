@@ -30,7 +30,6 @@ if __name__ == "__main__":
     run = True
 
     while run:
-        time.sleep(2)
         
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -40,6 +39,11 @@ if __name__ == "__main__":
         a2 = agent1.get_action_test(torch.as_tensor(state[1]))
 
         action = encode_action(a1, a2)
-        state, reward, _, _, _ =  env.step(action)
+        state, reward, term, trunc, _ =  env.step(action)
+        
+        if term or trunc: 
+            print(term, trunc)
+            
+        time.sleep(2)
         
         screen.update(env, [a1,a2])
