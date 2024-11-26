@@ -1,3 +1,7 @@
+"""
+This file show the gui and let you control the agents manually using keyboard
+"""
+
 import pygame as pg
 import torch
 import numpy as np

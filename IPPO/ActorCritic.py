@@ -54,11 +54,15 @@ class Agent(nn.Module):
         return action             
     
     def save_actor(self, name: str) -> None:
+        """
+        Save parameters for actor network in 'Saved_agents' folder, if folder doesn't exist, create one 
+        """
         if not os.path.exists("Saved_agents/"):
             os.mkdir("Saved_agents/")
         
         agent_path = "Saved_agents/" + name + ".pth"
         
+        # Add a random number at the end of the name to avoid ovewrite old models
         if os.path.exists(agent_path):
             print("Save name changed, new name:")
             while os.path.exists(agent_path):

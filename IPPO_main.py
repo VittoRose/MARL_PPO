@@ -1,3 +1,12 @@
+"""
+Run this file to start a new training with Independent Proximal Policy Optimization
+
+Modify training parameters in IPPO.parameters
+
+Set name = "experiment_name" to save logs and training parameters, use None to skip logs
+
+"""
+
 import gymnasium as gym
 import torch
 from grid_env.coverage import encode_action, decode_reward
@@ -40,7 +49,7 @@ next_obs, _ = envs.reset()
 next_obs = torch.tensor(next_obs)
 next_done = torch.zeros(N_ENV)
 
-for epoch in range(0, 2):
+for epoch in range(0, MAX_EPOCH):
     
     # Progress bar
     logger.show_progress(epoch)

@@ -1,3 +1,8 @@
+"""
+This file start a new training usin Proximal Policy Optimization in GridEnv with one agent
+"""
+
+
 import gymnasium as gym
 import torch
 
