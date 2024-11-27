@@ -16,19 +16,19 @@ class Buffer():
         # Preallocation
         self.obs = torch.zeros((N_STEP, N_ENV, n_agents, observation_shape), dtype=torch.float32)
         
-        self.actions = torch.zeros((N_STEP, N_ENV, n_agents, 1), dtype=torch.float32)
-        self.actions_log_prob = torch.zeros((N_STEP, N_ENV, n_agents, 1), dtype=torch.float32)
-        self.rewards = torch.zeros((N_STEP, N_ENV, n_agents, 1), dtype=torch.float32)
-        self.dones = torch.zeros((N_STEP, N_ENV, 1), dtype=torch.float32)
+        self.actions = torch.zeros((N_STEP, N_ENV, n_agents), dtype=torch.float32)
+        self.actions_log_prob = torch.zeros((N_STEP, N_ENV, n_agents), dtype=torch.float32)
+        self.rewards = torch.zeros((N_STEP, N_ENV, n_agents), dtype=torch.float32)
+        self.dones = torch.zeros((N_STEP, N_ENV), dtype=torch.float32)
         
-        self.value_pred = torch.zeros((N_STEP+1, N_ENV, 1), dtype=torch.float32)
+        self.value_pred = torch.zeros((N_STEP, N_ENV), dtype=torch.float32)
         
     def update(self, next_obs, next_done, step):
         """
         Update state and dones for the current step
         """
         self.obs[step] = next_obs
-        self.dones[step] = next_done.unsqueeze(dim=-1)
+        self.dones[step] = next_done
 
     def store(self, value: torch.tensor, action: torch.tensor, logprob: torch.tensor, reward: float, step: int):
         """
@@ -44,7 +44,7 @@ class Buffer():
         
         self.actions[step] = action
         self.actions_log_prob[step] = logprob.squeeze()
-        self.rewards[step] = torch.tensor(reward)
+        self.rewards[step] = torch.t(torch.tensor(reward))
 
     def get_batch(self):
         """

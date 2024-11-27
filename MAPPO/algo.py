@@ -11,7 +11,7 @@ def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, to
     
     with torch.no_grad():
         critic_state = get_critic_state(next_obs, N_ENV)
-        next_value = agent.get_value(critic_state).reshape(1, -1)
+        next_value = agent.get_value(critic_state)
         advantages = torch.zeros_like(buffer.rewards)
         lastgaelam = 0
         for t in reversed(range(N_STEP)):
@@ -21,7 +21,14 @@ def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, to
             else:
                 nextnonterminal = 1.0 - buffer.dones[t + 1].int()
                 nextvalues = buffer.value_pred[t + 1]
-            delta = buffer.rewards[t] + GAMMA * nextvalues * nextnonterminal - buffer.value_pred[t]
+
+            # Reshape tensor from [N_ENV] to [N_ENV, N_AGENTS]
+            nextvalues = nextvalues.unsqueeze(dim=-1).expand(-1,2)
+            nextnonterminal = nextnonterminal.unsqueeze(dim=-1).expand(-1,2)
+            value_pred = buffer.value_pred[t].unsqueeze(dim=-1).expand(-1,2)
+
+            # delta.shape -> [N_ENV, N_AGENTS]
+            delta = buffer.rewards[t] + GAMMA * nextvalues * nextnonterminal - value_pred   
             advantages[t] = lastgaelam = delta + GAMMA * GAE_LAMBDA * nextnonterminal * lastgaelam
         returns = advantages + buffer.value_pred
 

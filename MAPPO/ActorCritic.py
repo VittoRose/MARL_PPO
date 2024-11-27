@@ -130,9 +130,15 @@ class Networks():
         self.actor_optim = torch.optim.Adam(self.actor.parameters(), lr=lr_list[0])
         self.critic_optim = torch.optim.Adam(self.critic.parameters(), lr=lr_list[1])
         
-    def get_action_value(self, states, critic_state):
+    def get_action_value(self, states: torch.tensor, critic_state: torch.tensor) -> tuple[torch.tensor]:
         """
-        Evaluate the current state with actor and critic network
+        Evaluate the current state with actor and critic network, used during policy rollout
+        :param states: batch of states for actor network
+        :param critic_states: batch of states for critic network
+        
+        :return actions: action tensor with shape [N_ENV, N_AGENT]
+        :return logprobs: tensor with logprob of each action in actions, shape [N_ENV, N_AGENT]
+        :return values: tensor with values for each critic state, shape [N_ENV]
         """
         
         actions = torch.zeros(2, N_ENV)
@@ -146,11 +152,17 @@ class Networks():
         
         values = self.critic(critic_state)
         
-        return actions, logprobs, values
+        return torch.t(actions), torch.t(logprobs), values.squeeze()
     
     def get_value(self, critic_state):
-        """ Get the value prediction from the current state """
-        return self.critic(critic_state)
+        """ 
+        Get the value prediction from the current state 
+        
+        :param critic_state: Centralized critic state
+        
+        :return value_prediction: prediction of current state value, shape [N_ENV]
+        """
+        return torch.t(self.critic(critic_state)).squeeze()
     
     def evaluate_action(self, state, actions, critic_state):
         """ Evaluate action and value for the given state, no action output"""

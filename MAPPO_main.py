@@ -56,7 +56,7 @@ for epoch in range(0, MAX_EPOCH):
             critic_state = get_critic_state(next_obs, N_ENV)
             actions, logprob, value = actor_critic.get_action_value(states, critic_state)
             
-            action = encode_action(actions[0].cpu(), actions[1].cpu())
+            action = encode_action(actions[:,0].cpu(), actions[:,1].cpu())
 
         # Execute action in environment
         next_obs, code_reward, truncated, terminated, _ = envs.step(action)
