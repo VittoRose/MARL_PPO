@@ -7,6 +7,13 @@ from .parameters import *
 def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, torch.tensor]:
     """
     Get advantage and return value based on the interaction with the environment
+    
+    :param agent: Actor_critic class, used to evaluate last obs value
+    :param next_obs: Last observation for the N_STEPth timestamp
+    :param next_done: Last done check
+    
+    :return advantages: estiamtion using GAE, [N_STEP, N_ENV, N_AGENT]
+    :return values: target for critic network, [N_STEP, N_ENV, N_AGENT]
     """
     
     with torch.no_grad():
@@ -30,11 +37,15 @@ def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, to
             # delta.shape -> [N_ENV, N_AGENTS]
             delta = buffer.rewards[t] + GAMMA * nextvalues * nextnonterminal - value_pred   
             advantages[t] = lastgaelam = delta + GAMMA * GAE_LAMBDA * nextnonterminal * lastgaelam
-        returns = advantages + buffer.value_pred
+        
+        # Add a dimension to value to get shape: [N_STEP, N_ENV, N_AGENT]
+        value = buffer.value_pred.unsqueeze(dim=-1).repeat(1,1,2)
+        
+        returns = advantages + value
 
     return advantages, returns
 
-def update_network(agent, optimizer, buffer, b_advantages, b_returns, logger):
+def update_network(agent, buffer, b_advantages, b_returns, logger):
     """
     Update network K times with the same experience divided in mini batches
     """
@@ -47,13 +58,15 @@ def update_network(agent, optimizer, buffer, b_advantages, b_returns, logger):
         np.random.shuffle(index)
         
         # Update the network using minibatches 
-        update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index)
+        update_minibatch(agent, buffer, b_advantages, b_returns, logger, index)
 
 
-def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index, agent_id = 0) -> None:
+def update_minibatch(agent, buffer, b_advantages, b_returns, logger, index, agent_id = 0) -> None:
     """
     Update actor and critic network using mini_batches from buffer 
     """
+    
+    # b_obs, b_logprobs, b_actions, b_values = buffer.get_batch()
     
     b_obs, b_logprobs, b_actions, b_values = buffer.get_batch()
 
@@ -63,7 +76,7 @@ def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, 
 
         min_batch_idx = index[start:end]
 
-        _, newlogprob, entropy, newval = agent.get_action_and_value(b_obs[min_batch_idx], b_actions.long()[min_batch_idx])
+        newlogprob, entropy, newval = agent.evaluate_action(b_obs[min_batch_idx], b_actions[min_batch_idx])
         logratio = newlogprob - b_logprobs[min_batch_idx]
         ratio = logratio.exp()
 

@@ -48,12 +48,11 @@ class Buffer():
 
     def get_batch(self):
         """
-        Return the batch in the proper shape
-        """
+        Return the batch for training
         
-        b_obs = self.obs.reshape((-1,) + self.obs_shape)
-        b_logprobs = self.logprobs.reshape(-1)
-        b_actions = self.actions.reshape(-1)
-        b_values = self.values.reshape(-1)
-
-        return b_obs, b_logprobs, b_actions, b_values
+        :return obs: observation for each timestep, environment, agent. Shape: [N_STEP*N_ENV*N_AGENT, obs_shape]
+        :return log_prob: log_prob for each timestep, environment, agent. Shape: [N_STEP*N_ENV*N_AGENT]
+        :return actions: action for each timestep, environment, agent. Shape: [N_STEP*N_ENV*N_AGENT]
+        :return value_pred: value for each timestep, environment. Shape: [N_STEP*N_ENV]
+        """
+        return self.obs, self.actions_log_prob, self.actions, self.value_pred

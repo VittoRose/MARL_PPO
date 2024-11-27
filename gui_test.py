@@ -1,5 +1,5 @@
 """
-This file is used to test trained network with a gui
+This file is used to test trained network with a GUI
 """
 
 

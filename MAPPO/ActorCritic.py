@@ -165,7 +165,16 @@ class Networks():
         return torch.t(self.critic(critic_state)).squeeze()
     
     def evaluate_action(self, state, actions, critic_state):
-        """ Evaluate action and value for the given state, no action output"""
+        """ 
+        Evaluate action and value for the given state, no action output, used in update
+        
+        :param state: state to evaluate again with the new network
+        :param critic_state: critic state to eval again with new network
+        
+        :return probs: new logprob []
+        :return entr: new entropy []
+        :return value: new value prediction []
+        """
         
         logits = self.actor(state)
         probs = Categorical(logits=logits)
