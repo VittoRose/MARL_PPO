@@ -70,13 +70,18 @@ for epoch in range(0, MAX_EPOCH):
         reward0, reward1 = decode_reward(code_reward)
         done = terminated | truncated
 
-        buffer.store(value, actions, logprob, (reward0, reward1), step)
+        buffer.store(critic_state, 
+                     value, 
+                     actions, 
+                     logprob, 
+                     (reward0, reward1), 
+                     step)
         
         next_obs, next_done = torch.tensor(next_obs), torch.tensor(done)
         
-        advantages, returns = MAPPO.get_advantages(actor_critic, buffer, next_obs, next_done)
-        
-        MAPPO.update_network(actor_critic, buffer, advantages, returns, logger)
+    advantages, returns = MAPPO.get_advantages(actor_critic, buffer, next_obs, next_done)
+    
+    MAPPO.update_network(actor_critic, buffer, advantages, returns, logger)
         
 test_env.close()                
 envs.close()

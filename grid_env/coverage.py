@@ -19,7 +19,7 @@ def get_critic_state(state: torch.tensor, n_env: int) -> torch.tensor:
     if state.size(dim=0) == n_env:
         critic_states = torch.zeros((n_env, 37))
         for i,s in enumerate(state):
-            critic_states[i] = get_critic_state(s,4)
+            critic_states[i] = get_critic_state(s, n_env)
         
         return critic_states
     
@@ -30,7 +30,7 @@ def get_critic_state(state: torch.tensor, n_env: int) -> torch.tensor:
     critic_state[8:12] = state[1, 4:8]
     critic_state[12:] = state[0, 8:]
     
-    return torch.tensor(critic_state)
+    return torch.tensor(critic_state, dtype=torch.float32)
 
 def encode_action(action_0: torch.tensor, action_1: torch.tensor) -> list[int]:
     """

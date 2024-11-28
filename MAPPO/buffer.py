@@ -15,7 +15,7 @@ class Buffer():
         
         # Preallocation
         self.obs = torch.zeros((N_STEP, N_ENV, n_agents, observation_shape), dtype=torch.float32)
-        
+        self.crit_obs = torch.zeros((N_STEP, N_ENV, self.critic_shape), dtype=torch.float32)
         self.actions = torch.zeros((N_STEP, N_ENV, n_agents), dtype=torch.float32)
         self.actions_log_prob = torch.zeros((N_STEP, N_ENV, n_agents), dtype=torch.float32)
         self.rewards = torch.zeros((N_STEP, N_ENV, n_agents), dtype=torch.float32)
@@ -30,7 +30,7 @@ class Buffer():
         self.obs[step] = next_obs
         self.dones[step] = next_done
 
-    def store(self, value: torch.tensor, action: torch.tensor, logprob: torch.tensor, reward: float, step: int):
+    def store(self, critic_obs: torch.tensor, value: torch.tensor, action: torch.tensor, logprob: torch.tensor, reward: float, step: int):
         """
         Store:
             value: critic out
@@ -39,12 +39,13 @@ class Buffer():
             reward: environment reward
             step: step number in the environment
         """
+        
         with torch.no_grad():
             self.value_pred[step] = value
-        
-        self.actions[step] = action
-        self.actions_log_prob[step] = logprob.squeeze()
-        self.rewards[step] = torch.t(torch.tensor(reward))
+            self.crit_obs[step] = critic_obs
+            self.actions[step] = action
+            self.actions_log_prob[step] = logprob.squeeze()
+            self.rewards[step] = torch.t(torch.tensor(reward))
 
     def get_batch(self):
         """
@@ -53,6 +54,14 @@ class Buffer():
         :return obs: observation for each timestep, environment, agent. Shape: [N_STEP*N_ENV*N_AGENT, obs_shape]
         :return log_prob: log_prob for each timestep, environment, agent. Shape: [N_STEP*N_ENV*N_AGENT]
         :return actions: action for each timestep, environment, agent. Shape: [N_STEP*N_ENV*N_AGENT]
+        :return crit_obs: critic state for each timestep, environment. Shape: [N_STEP*N_ENV, obs_shape]
         :return value_pred: value for each timestep, environment. Shape: [N_STEP*N_ENV]
         """
-        return self.obs, self.actions_log_prob, self.actions, self.value_pred
+        
+        obs = self.obs.reshape(-1,self.obs_shape)
+        log_prob = self.actions_log_prob.flatten()
+        actions = self.actions.flatten()
+        crit_obs = self.crit_obs.reshape(-1,self.critic_shape)
+        value_pred = self.value_pred.flatten()
+        
+        return obs, log_prob, actions, crit_obs, value_pred

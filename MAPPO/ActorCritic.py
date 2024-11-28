@@ -133,8 +133,8 @@ class Networks():
     def get_action_value(self, states: torch.tensor, critic_state: torch.tensor) -> tuple[torch.tensor]:
         """
         Evaluate the current state with actor and critic network, used during policy rollout
-        :param states: batch of states for actor network
-        :param critic_states: batch of states for critic network
+        :param states: batch of states for actor network [N_AGENT, N_ENV, OBS]
+        :param critic_states: batch of states for critic network [N_ENV, CRITIC_OBS]
         
         :return actions: action tensor with shape [N_ENV, N_AGENT]
         :return logprobs: tensor with logprob of each action in actions, shape [N_ENV, N_AGENT]
@@ -164,19 +164,17 @@ class Networks():
         """
         return torch.t(self.critic(critic_state)).squeeze()
     
-    def evaluate_action(self, state, actions, critic_state):
+    def evaluate_action(self, state, actions):
         """ 
         Evaluate action and value for the given state, no action output, used in update
         
-        :param state: state to evaluate again with the new network
-        :param critic_state: critic state to eval again with new network
+        :param state: state to evaluate again with the new network [MINIBATCH_SIZE, OBS]
         
-        :return probs: new logprob []
-        :return entr: new entropy []
-        :return value: new value prediction []
+        :return probs: new logprob [MINIBATCH_SIZE]
+        :return entr: new entropy [MINIBATCH_SIZE]
         """
-        
+    
         logits = self.actor(state)
         probs = Categorical(logits=logits)
         
-        return probs.log_prob(actions), probs.entropy(), self.critic(critic_state)
+        return probs.log_prob(actions), probs.entropy()

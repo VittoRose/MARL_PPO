@@ -12,6 +12,12 @@ from IPPO.utils.md_report import create_md_summary, complete_md_summary
 class InfoPlot:
     """
     Class that contain the tensorboard logger and the progress bar shown during training
+    
+    :param gym_id: gymnasium environment id
+    :param name: experiment name for logs
+    :param device: device used for torch, type: str, don't use torch.device
+    :param folder: folder to save logs
+    :param rnd: use deterministic seed if True, random seed if False
     """
     def __init__(self, gym_id: str, name: str, device: str, folder: str = "logs/", rnd: bool=False) -> SummaryWriter:
 

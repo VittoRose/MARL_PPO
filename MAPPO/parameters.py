@@ -1,16 +1,17 @@
 from torch.nn import Tanh
 
+N_AGENT = 2
+
 # Network parameters
 N_LAYER = 2                     # Number of hidden layer
 N_NEURONS = 64                  # Number of neurons for each layer
 ACT_FN = Tanh()                 # Activation function
 
-
 # Training parameters
 N_ENV = 4
-N_STEP = 128                    # Number of step in the environment between each update
-BATCH_SIZE = N_ENV*N_STEP*2     # Data collected for each update
-MAX_EPOCH = 8_000               # Total epoch for training
+N_STEP = 128                            # Number of step in the environment between each update
+BATCH_SIZE = N_ENV*N_STEP*N_AGENT       # Data collected for each update
+MAX_EPOCH = 8_000                       # Total epoch for training
 
 # Hyperparameters
 LR = 2.5e-4                     # Optimizer learning rate

@@ -45,81 +45,141 @@ def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, to
 
     return advantages, returns
 
-def update_network(agent, buffer, b_advantages, b_returns, logger):
+def update_network(agent, buffer, advantages, returns, logger):
     """
     Update network K times with the same experience divided in mini batches
+    
+    :param agent: Actor_critic wrapper to update
+    :param buffer: Rollout Buffer with experience 
+    :param advantage: Advantage data, shape: [N_STEP, N_ENV, N_AGENT]
+    :param returns: returns for critic network, shape [N_STEP, N_ENV, N_AGENT]
     """
-    index = np.arange(BATCH_SIZE)
-
+    
+    # From [N_STEP, N_ENV, N_AGENT] to [BATCH_SIZE] = [N_STEP*N_ENV*N_AGENT]
+    b_advantages = advantages.flatten()
+    b_returns = returns.flatten()
+    
     # Update networks K times
     for _ in range(K_EPOCHS):
 
-        # Shuffle index to break correlations
-        np.random.shuffle(index)
+        # Shuffle index to break correlations 
+        actor_i = torch.randperm(BATCH_SIZE)
+        critic_i = torch.randperm(N_STEP*N_ENV)
         
         # Update the network using minibatches 
-        update_minibatch(agent, buffer, b_advantages, b_returns, logger, index)
+        update_minibatch(agent, buffer, b_advantages, b_returns, logger, actor_i, critic_i)
 
 
-def update_minibatch(agent, buffer, b_advantages, b_returns, logger, index, agent_id = 0) -> None:
+def update_minibatch(agent, buffer, b_advantages, b_returns, logger, actor_i, critic_i, agent_id = 0) -> None:
     """
     Update actor and critic network using mini_batches from buffer 
     """
-    
-    # b_obs, b_logprobs, b_actions, b_values = buffer.get_batch()
-    
-    b_obs, b_logprobs, b_actions, b_values = buffer.get_batch()
+        
+    # Get the data in the buffer with the proper shape
+    b_obs, b_logprobs, b_actions, b_critic, b_values = buffer.get_batch()
 
     for start in range(0, BATCH_SIZE, MINI_BATCH_SIZE):
         
+        # Index for minibatch
         end = start + MINI_BATCH_SIZE
+        idx_a = actor_i[start:end]
+        idx_c = critic_i[start//N_AGENT:end//N_AGENT]
 
-        min_batch_idx = index[start:end]
+        # Create minibatch for actor 
+        mb_obs = b_obs[idx_a]
+        mb_actions = b_actions[idx_a]
+        mb_logprobs = b_logprobs[idx_a]
+        mb_advantages = b_advantages[idx_a]
 
-        newlogprob, entropy, newval = agent.evaluate_action(b_obs[min_batch_idx], b_actions[min_batch_idx])
-        logratio = newlogprob - b_logprobs[min_batch_idx]
-        ratio = logratio.exp()
+        actor_loss = update_actor(agent, mb_obs, mb_actions, mb_logprobs, mb_advantages)
 
-        mb_advantages = b_advantages[min_batch_idx]
-
-        # Normalize advantages
-        mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
-
-        # Normalize value 
-        if VALUE_NORM:
-            newval = (newval - newval.mean()) / (newval.std() + 1e-8)
-            b_values[min_batch_idx] = (b_values[min_batch_idx] - b_values[min_batch_idx].mean()) / (b_values[min_batch_idx].std() + 1e-8)
+        # Prepare the minibatches for critic
+        mb_values = b_values[idx_c]
+        mb_critic = b_critic[idx_c]
+        mb_returns = b_returns[idx_c]
         
-        # Policy loss
-        surr1 = -mb_advantages * ratio
-        surr2 = -mb_advantages * torch.clamp(ratio, 1-CLIP, 1+CLIP)
-        pg_loss = torch.max(surr1, surr2).mean()
-
-        # Value loss
-        if VALUE_CLIP:
-            v_clip = b_values[min_batch_idx] + torch.clamp(newval.squeeze()-b_values[min_batch_idx], 1-CLIP, 1+CLIP)
-            v_losses = torch.nn.functional.mse_loss(newval.squeeze(), b_returns[min_batch_idx])
-            v_loss_max = torch.max(v_clip, v_losses)
-            v_loss = 0.5*v_loss_max.mean()
-        else:
-            v_losses = torch.nn.functional.mse_loss(newval.squeeze(), b_returns[min_batch_idx])
-            v_loss = v_losses.mean()
-
-        # Entropy loss
-        entropy_loss = entropy.mean()
-
-        # Global loss function
-        loss = pg_loss - ENTROPY_COEF*entropy_loss + VALUE_COEFF*v_loss
-        logger.add_loss(loss.item(), agent_id)
+        critic_loss = update_critic(agent, mb_critic, mb_values, mb_returns)
         
-        optimizer.zero_grad()
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(agent.parameters(), 0.5)
-        optimizer.step()
-
-def test_network(update, agent0, agent1, test_env, logger):
+        
+def update_actor(agent, mb_obs, mb_actions, mb_logprobs, mb_advantages) -> float:
     """
-    Execute n complete run in a test enviroment without exploration
+    Update actor with clip and entropy loss from a minibatch
+    
+    :param agent: Actor_critic wrapper to update
+    :param mb_obs: Minibatch of observation. Shape [MINIBATCH, obs]
+    :param mb_actions: Minibatch of actions. Shape [MINIBATCH]
+    :param mb_logprobs: Minibatch of logprob. Shape [MINIBATCH]
+    :param mb_advantages: Minibatch of advantages. Shape [MINIBATCH]
+    
+    :return loss: loss value
+    """
+    newlogprob, entropy = agent.evaluate_action(mb_obs, mb_actions)
+    
+    # Evaluation for actor loss
+    logratio = newlogprob - mb_logprobs
+    ratio = logratio.exp()
+
+    # Normalize advantages
+    mb_advantages = (mb_advantages - mb_advantages.mean()) / (mb_advantages.std() + 1e-8)
+
+    # Policy loss
+    surr1 = -mb_advantages * ratio
+    surr2 = -mb_advantages * torch.clamp(ratio, 1-CLIP, 1+CLIP)
+    l1 = torch.max(surr1, surr2).mean()
+    entropy_loss = entropy.mean()
+    
+    # Clip loss + entropy bonus
+    loss = l1 - ENTROPY_COEF*entropy_loss
+    
+    # Backward
+    agent.actor_optim.zero_grad()
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(agent.actor.parameters(), 0.5)
+    agent.actor_optim.step()
+    
+    return loss.item()
+
+def update_critic(agent, mb_critic, mb_values, mb_returns):
+    """
+    Update actor with clip and entropy loss from a minibatch
+    Minibatches size: [N_STEP*N_ENV]
+    
+    :param agent: Actor_critic wrapper to update
+    :param mb_obs: Minibatch of observation. Shape [N_STEP*N_ENV, obs]
+    :param mb_obs: Minibatch of observation. Shape [N_STEP*N_ENV]
+    """
+    
+    newval = agent.get_value(mb_critic)
+    
+    # Normalize value 
+    if VALUE_NORM:
+        newval = (newval - newval.mean()) / (newval.std() + 1e-8)
+        mb_values = (mb_values - mb_values.mean()) / (mb_values.std() + 1e-8)
+
+    # Value loss
+    if VALUE_CLIP:
+        v_clip = mb_values + torch.clamp(newval-mb_values, 1-CLIP, 1+CLIP)
+        v_losses = torch.nn.functional.mse_loss(newval, mb_returns)
+        v_loss_max = torch.max(v_clip, v_losses)
+        v_loss = 0.5*v_loss_max.mean()
+    else:
+        v_losses = torch.nn.functional.mse_loss(newval, mb_returns)
+        v_loss = v_losses.mean()
+    
+    # Backpropagation
+    agent.critic_optim.zero_grad()
+    v_loss.backward()
+    torch.nn.utils.clip_grad_norm_(agent.actor.parameters(), 0.5)
+    agent.critic_optim.step()
+        
+def test_network(update, agent, test_env, logger):
+    """
+    Execute n complete run in a test enviroment using the action with the maximum probability from the policy
+    
+    :param update: Current epoch number
+    :param agent: Actor_critic wrapper
+    :param test_env: Single gym GridCoverage environment
+    :param logger: InfoPlot object
     """
     
     if update % TEST_INTERVAL == 0:
