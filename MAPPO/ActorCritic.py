@@ -1,6 +1,8 @@
 import torch.nn as nn
 import torch
 from torch.distributions.categorical import Categorical
+import os
+import numpy as np
 
 # Number of hidden layer, neurons and activation funcion are defined in parameters.py
 from .parameters import N_LAYER, N_NEURONS, ACT_FN, N_ENV
@@ -178,3 +180,29 @@ class Networks():
         probs = Categorical(logits=logits)
         
         return probs.log_prob(actions), probs.entropy()
+    
+    def get_action_test(self, state):
+        
+        logits = self.actor(state)
+        
+        return torch.argmax(logits)
+    
+    def save_actor(self, name: str) -> None:
+        """
+        Save parameters for actor network in 'Saved_agents' folder, if folder doesn't exist, create one 
+        """
+        if name is not None:
+            if not os.path.exists("Saved_agents/"):
+                os.mkdir("Saved_agents/")
+            
+            agent_path = "Saved_agents/" + name + "shared" + ".pth"
+            
+            # Add a random number at the end of the name to avoid ovewrite old models
+            if os.path.exists(agent_path):
+                print("Save name changed, new name:")
+                while os.path.exists(agent_path):
+                    rng = np.random.randint(50)
+                    agent_path = "Saved_agents/" + name + "shared" + "_" + str(rng) + ".pth"
+                print(agent_path)
+                
+            torch.save(self.actor.state_dict(), agent_path)

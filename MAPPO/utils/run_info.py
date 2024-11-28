@@ -36,8 +36,8 @@ class InfoPlot:
         # Handle seed
         seed = self.set_seed(rnd)
                 
-        self.loss_plot = [0, 0]
-        self.loss_index = [0, 0]
+        self.loss_plot = 0
+        self.loss_idx = 0
             
         # Add folder sintax if needed
         if folder[-1] != "/" :
@@ -60,18 +60,19 @@ class InfoPlot:
         else:
             self.logger = None
     
-    def add_loss(self, loss: float, agent: int) -> None:
+    def add_loss(self, loss_a: float, loss_c: float) -> None:
         """
         Add total loss of one agent to tensorboard
         :param loss: numerical value for loss
         :param agent: agent id 
         """
         if self.logger is not None:
-            if self.loss_plot[agent] % 50 == 0:
-                self.logger.add_scalar(f"Train/Loss {agent}", loss, self.loss_index[agent])
-                self.loss_index[agent] += 1
+            if self.loss_plot % 50 == 0:
+                self.logger.add_scalar(f"Train/Loss actor", loss_a, self.loss_idx)
+                self.logger.add_scalar(f"Train/Loss critic", loss_c, self.loss_idx)
+                self.loss_idx += 1
             
-            self.loss_plot[agent] += 1
+            self.loss_plot += 1
         
         
     def add_test(self, reward: int | list[int], length: int) -> None:

@@ -18,7 +18,7 @@ from MAPPO.utils.util_function import make_env
 import MAPPO.algo as MAPPO
 
 # Run name for logger, use None if no logger is needed
-name = None
+name = "Run_00"
 
 # Tensorboard Summary writer
 gym_id = "GridCoverage-v0"
@@ -48,7 +48,7 @@ for epoch in range(0, MAX_EPOCH):
     logger.show_progress(epoch)
 
     # Test agent in a separate environment
-    #IPPO.test_network(epoch, agent, agent, test_env, logger)
+    MAPPO.test_network(epoch, actor_critic, test_env, logger)
     
     # Collect data from the environment
     for step in range(0, N_STEP):
@@ -82,7 +82,9 @@ for epoch in range(0, MAX_EPOCH):
     advantages, returns = MAPPO.get_advantages(actor_critic, buffer, next_obs, next_done)
     
     MAPPO.update_network(actor_critic, buffer, advantages, returns, logger)
-        
+
+actor_critic.save_actor(name)
+
 test_env.close()                
 envs.close()
 logger.close()

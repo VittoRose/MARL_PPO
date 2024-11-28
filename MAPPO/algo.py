@@ -70,7 +70,7 @@ def update_network(agent, buffer, advantages, returns, logger):
         update_minibatch(agent, buffer, b_advantages, b_returns, logger, actor_i, critic_i)
 
 
-def update_minibatch(agent, buffer, b_advantages, b_returns, logger, actor_i, critic_i, agent_id = 0) -> None:
+def update_minibatch(agent, buffer, b_advantages, b_returns, logger, actor_i, critic_i) -> None:
     """
     Update actor and critic network using mini_batches from buffer 
     """
@@ -99,6 +99,8 @@ def update_minibatch(agent, buffer, b_advantages, b_returns, logger, actor_i, cr
         mb_returns = b_returns[idx_c]
         
         critic_loss = update_critic(agent, mb_critic, mb_values, mb_returns)
+        
+        logger.add_loss(actor_loss, critic_loss)
         
         
 def update_actor(agent, mb_obs, mb_actions, mb_logprobs, mb_advantages) -> float:
@@ -171,6 +173,8 @@ def update_critic(agent, mb_critic, mb_values, mb_returns):
     v_loss.backward()
     torch.nn.utils.clip_grad_norm_(agent.actor.parameters(), 0.5)
     agent.critic_optim.step()
+    
+    return v_loss.item()
         
 def test_network(update, agent, test_env, logger):
     """
@@ -198,8 +202,8 @@ def test_network(update, agent, test_env, logger):
                 # Get action with argmax
                 with torch.no_grad():
                     test_state_tensor = torch.tensor(test_state)
-                    action = encode_action(agent0.get_action_test(test_state_tensor[0]).cpu(),
-                                            agent1.get_action_test(test_state_tensor[1]).cpu())
+                    action = encode_action(agent.get_action_test(test_state_tensor[0]).cpu(),
+                                            agent.get_action_test(test_state_tensor[1]).cpu())
                     
                 ns, rew, ter, trun, _ = test_env.step(action)
                 
