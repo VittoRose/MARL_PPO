@@ -4,10 +4,10 @@ Repository that contains my implementation of Multi Agent Deep Reinforcement Lea
 
 ## Dependency
 
-*pygame 2.6.0
-*torch  2.3.1+cu121
-*tensorboard 2.15.0
-*gymnasium 1.0.0
+* pygame 2.6.0
+* torch  2.3.1+cu121
+* tensorboard 2.15.0
+* gymnasium 1.0.0
 
 ## Multi Agent Grid Coverage
 
