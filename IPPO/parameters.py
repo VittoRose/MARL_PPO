@@ -3,7 +3,7 @@
 N_ENV = 4
 N_STEP = 128                    # Number of step in the environment between each update
 BATCH_SIZE = N_ENV*N_STEP       # Data collected for each update
-MAX_EPOCH = 8_000               # Total epoch for training
+MAX_EPOCH = 4_000               # Total epoch for training
 
 # Hyperparameters
 LR = 2.5e-4                     # Optimizer learning rate

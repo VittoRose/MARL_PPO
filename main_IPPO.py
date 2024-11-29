@@ -57,18 +57,20 @@ for epoch in range(0, MAX_EPOCH):
     
     # Collect data from the environment
     for step in range(0, N_STEP):
-
-        buffer0.update(next_obs[:,0,:], next_done, step)
-        buffer1.update(next_obs[:,1,:], next_done, step)
+        
+        for i in range(N_AGENT):
+            buffer[i].update(next_obs[:,i,:], next_done, step)
 
         # Get action and value from current state
         with torch.no_grad():
             actions, logprobs, values = [], [], []
+            
             for i in range(N_AGENT):
                 action, logprob, _, value = agent[i].get_action_and_value(next_obs[:,i,:])
                 actions.append(action)
                 logprobs.append(logprob)
                 values.append(value)
+                
             action = encode_action(actions[0].cpu(), actions[1].cpu())
 
         # Execute action in environment
@@ -76,29 +78,27 @@ for epoch in range(0, MAX_EPOCH):
                     
         reward0, reward1 = decode_reward(code_reward)
         
+        rewards = [reward0, reward1]
+        
         done = terminated | truncated
 
-        buffer0.store(value0, action0, logprob0, reward0, step)
-        buffer1.store(value1, action1, logprob1, reward1, step)
+        for i in range(N_AGENT):
+            buffer[i].store(values[i], actions[i], logprobs[i], rewards[i], step)
         
         next_obs, next_done = torch.tensor(next_obs), torch.tensor(done)
 
-    advantages, returns = [], []
     for i in range(0,N_AGENT):
         advantage, returns = IPPO.get_advantages(agent[i], buffer[i], next_obs[:, i, :], next_done)
 
-    # flatten the batch
-    b_advantages0 = advantages0.reshape(-1)
-    b_advantages1 = advantages1.reshape(-1)
-    b_returns0 = returns0.reshape(-1)
-    b_returns1 = returns1.reshape(-1)
+        # flatten the batch
+        b_advantages = advantage.reshape(-1)
+        b_returns = returns.reshape(-1)
 
-    IPPO.update_network(agent0, optimizer0, buffer0, b_advantages0, b_returns0, logger, 0)
-    IPPO.update_network(agent1, optimizer1, buffer1, b_advantages1, b_returns1, logger, 1)
+        IPPO.update_network(agent[i], optimizer[i], buffer[i], b_advantages, b_returns, logger, i)
 
 # Save agents    
-agent0.save_actor("Agent_0")
-agent1.save_actor("Agent_1")
+agent[0].save_actor("Agent_0")
+agent[1].save_actor("Agent_1")
 
 test_env.close()     
 envs.close()

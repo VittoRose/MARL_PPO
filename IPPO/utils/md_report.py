@@ -11,6 +11,7 @@ def create_md_summary(gym_id: str, name: str, folder: str, seed: float, device: 
     with open(report, 'w') as file:
         file.write("# Environment: " + gym_id + "\n\n")
         
+        file.write("Algorithm IPPO \n")
         file.write("Executed on " + device + "\n")
         if int(seed) == SEED:
             file.write(f"Seed: {seed}, (deterministic)\n")
