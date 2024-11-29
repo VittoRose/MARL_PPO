@@ -16,8 +16,9 @@ The environment was created using gymnasium API and i provided a Jupiter Noteboo
 
 ### Usage
 
-* To train a network for a single agent job run *Single_agent.py*
-* To train two agents with Independent PPO (IPPO) run *IPPO_main.py*
+* To train a network for a single agent job run *main_PPO.py*
+* To train two agents with Independent PPO (IPPO) run *main_IPPO.py*
+* To train two agents with Multi Agent PPO (MAPPO) run *main_MAPPO.py*
 
 ### After training
 

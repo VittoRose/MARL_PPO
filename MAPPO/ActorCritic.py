@@ -121,16 +121,20 @@ class Networks():
     Wrappers for Actor and Critic networks
     """
     
-    def __init__(self, state_dim, action_dim, critic_state_dim, lr_list, device=torch.device("cpu")):
+    def __init__(self, state_dim, action_dim, lr_list = None, critic_state_dim = None, device=torch.device("cpu")):
         
         self.state_dim = state_dim
-        self.critic_state_dim = critic_state_dim
         
         self.actor = Actor(self.state_dim, action_dim)
-        self.critic = Critic(self.critic_state_dim)
         
-        self.actor_optim = torch.optim.Adam(self.actor.parameters(), lr=lr_list[0])
-        self.critic_optim = torch.optim.Adam(self.critic.parameters(), lr=lr_list[1])
+        if lr_list is not None:
+            self.actor_optim = torch.optim.Adam(self.actor.parameters(), lr=lr_list[0])
+        
+        if critic_state_dim is not None:
+            self.critic_state_dim = critic_state_dim
+            self.critic = Critic(self.critic_state_dim)
+            self.critic_optim = torch.optim.Adam(self.critic.parameters(), lr=lr_list[1])
+        
         
     def get_action_value(self, states: torch.tensor, critic_state: torch.tensor) -> tuple[torch.tensor]:
         """
@@ -206,3 +210,11 @@ class Networks():
                 print(agent_path)
                 
             torch.save(self.actor.state_dict(), agent_path)
+            
+    def load(self, path: str):
+        """
+        Load actor network
+        """
+        checkpoint = torch.load(path)
+        self.actor.load_state_dict(checkpoint)
+        

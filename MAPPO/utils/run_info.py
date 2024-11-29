@@ -45,7 +45,7 @@ class InfoPlot:
 
         print(f"Experiment name: {name}")
         print("Running on " + device)
-        print("Training IPPO on GridCoverage")
+        print("Training MAPPO on GridCoverage")
         print(f"Using seed: {seed}") 
 
         if name is not None:
