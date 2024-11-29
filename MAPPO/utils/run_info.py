@@ -6,8 +6,8 @@ import random
 import os
 from time import time
 
-from IPPO.parameters import *
-from IPPO.utils.md_report import create_md_summary, complete_md_summary
+from MAPPO.parameters import *
+from MAPPO.utils.md_report import create_md_summary, complete_md_summary
 
 class InfoPlot:
     """

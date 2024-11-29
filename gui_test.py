@@ -1,5 +1,9 @@
 """
 This file is used to test trained network with a GUI
+
+Change manually the path inside the if ALGO == ... to load the correct file
+
+Choose the algorithm used to train the network with the ALGO param
 """
 
 ALGO = "MAPPO"
@@ -8,7 +12,7 @@ ALGO = "MAPPO"
 import pygame as pg
 import torch
 import numpy as np
-from grid_env.coverage import GridCoverage, decode_reward, encode_action
+from grid_env.coverage import GridCoverage, encode_action
 from grid_env.gui import GUI
 
 obs_shape = 33

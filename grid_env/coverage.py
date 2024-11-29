@@ -213,13 +213,17 @@ class GridCoverage(gym.Env):
         # Get the action from the table
         if self.n_agent == 2:
             actions = [action//5, action%5]
+        else:
+            actions = action
         
         rew_key = ["", ""]
 
         for agent in range(self.n_agent):
             
-            act = actions[agent]
-
+            if self.n_agent == 2:
+                act = actions[agent]
+            else:
+                act = actions
             skip, key = self.act2key(act)
             
             # Execute action and get the reward

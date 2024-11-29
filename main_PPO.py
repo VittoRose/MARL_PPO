@@ -14,7 +14,7 @@ from PPO.utils.run_info import InfoPlot
 from PPO.utils.util_function import make_env
 import PPO.algo as PPO
 
-name = None
+name = "Debug"
 gym_id = "GridCoverage-v0"
 
 # Select device
@@ -22,7 +22,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device_name = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Tensorboard Summary writer
-logger = InfoPlot(gym_id, name, device_name, "PPO")
+logger = InfoPlot(gym_id, name, device_name, folder="logs/")
 
 # Vector environment object
 envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=1) for _ in range(n_env)])

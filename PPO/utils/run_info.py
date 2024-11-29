@@ -7,16 +7,15 @@ import os
 from time import time
 
 from PPO.parameters import *
-from utils.md_report import create_md_summary, complete_md_summary
+from .md_report import create_md_summary, complete_md_summary
 
 # List of supported algorithm
-algo_list = ["PPO", "IPPO"]
 
 class InfoPlot:
     """
     Class that contain the tensorboard logger and the progress bar shown during training
     """
-    def __init__(self, gym_id: str,name: str, device: str, algo: str, folder: str = "logs/", rnd: bool=False) -> SummaryWriter:
+    def __init__(self, gym_id: str,name: str, device: str, folder: str = "logs/", rnd: bool=False) -> SummaryWriter:
 
         # Counter for plot
         self.test_index = 0
@@ -33,20 +32,9 @@ class InfoPlot:
         # Handle seed
         seed = self.set_seed(rnd)
         
-        # Type of algorithm
-        if algo in algo_list:
-            self.algo = algo
-        else:
-            raise NotImplemented("Algorithm not implemented")
-        
         # Loss plot
-        algo_list.remove("PPO")
-        if algo in algo_list: 
-            self.loss_plot = [0, 0]
-            self.loss_index = [0, 0]
-        else:
-            self.loss_plot = 0
-            self.loss_index = 0
+        self.loss_plot = 0
+        self.loss_index = 0
             
         # Add folder sintax if needed
         if folder[-1] != "/" :
@@ -54,7 +42,7 @@ class InfoPlot:
 
         print(f"Experiment name: {name}")
         print("Running on " + device)
-        print("Algorithm: " + algo)
+        print("Algorithm: PPO")
         print(f"Using seed: {seed}") 
 
         if name is not None:
@@ -73,51 +61,25 @@ class InfoPlot:
         """
         Add loss value to tensorboard
         """ 
-
         if self.logger is not None:
 
             # Add loss only once every 50 train ep
             if self.loss_plot % 50 == 0:
-                if self.algo == "PPO":
-                    if type(loss) == float:
-                        self.logger.add_scalar(tag, loss, self.loss_index)
-                    else: 
-                        self.logger.add_scalar(tag, loss.item(), self.loss_index)
-                
-                else:
-                    raise AttributeError("Use add_loss_MARL() for Multi agent")
-                
+                if type(loss) == float:
+                    self.logger.add_scalar(tag, loss, self.loss_index)
+                else: 
+                    self.logger.add_scalar(tag, loss.item(), self.loss_index)
+                                
                 self.loss_index += 1                    
-            self.loss_plot += 1
-    
-    def add_loss_MARL(self, loss: float, agent: int) -> None:
-        """
-        Add total loss of one agent to tensorboard
-        :param loss: numerical value for loss
-        :param agent: agent id 
-        """
-        if self.logger is not None:
-            if self.loss_plot[agent] % 50 == 0:
-                self.logger.add_scalar(f"Train/Loss {agent}", loss, self.loss_index[agent])
-                self.loss_index[agent] += 1
-            
-            self.loss_plot[agent] += 1
-        
+            self.loss_plot += 1        
         
     def add_test(self, reward: int | list[int], length: int) -> None:
         """
         Add test reward to tensorboard
         """
         if self.logger is not None:
-            if self.algo == "PPO":
-                self.logger.add_scalar("Test/Reward", reward, self.test_index)
-                self.logger.add_scalar("Test/Length", length, self.test_index)
-            elif self.algo == "IPPO": 
-                rw0 = float(reward[0])
-                rw2 = float(reward[1])
-                self.logger.add_scalar("Test/Reward 0", rw0, self.test_index)
-                self.logger.add_scalar("Test/Reward 1", rw2, self.test_index)
-                self.logger.add_scalar("Test/Length", length, self.test_index)
+            self.logger.add_scalar("Test/Reward", reward, self.test_index)
+            self.logger.add_scalar("Test/Length", length, self.test_index)
             self.test_index +=1
     
     def close(self):

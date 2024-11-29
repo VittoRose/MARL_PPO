@@ -119,6 +119,11 @@ class Critic(nn.Module):
 class Networks():
     """
     Wrappers for Actor and Critic networks
+
+    :param state_dim: agent state shape
+    :param action_dim: environment action shape
+    :param lr_list: list of learning_rate, if None optimizers are not created (for test on gui)
+    :param critic_state_dim: critic state shape, if None critic not created
     """
     
     def __init__(self, state_dim, action_dim, lr_list = None, critic_state_dim = None, device=torch.device("cpu")):
@@ -186,6 +191,13 @@ class Networks():
         return probs.log_prob(actions), probs.entropy()
     
     def get_action_test(self, state):
+        """
+        Return the action with the max probability from the policy
+
+        :param state: state to evaluate
+
+        :return action: action with the max probability
+        """
         
         logits = self.actor(state)
         
@@ -194,6 +206,8 @@ class Networks():
     def save_actor(self, name: str) -> None:
         """
         Save parameters for actor network in 'Saved_agents' folder, if folder doesn't exist, create one 
+
+        :param name: experiment name
         """
         if name is not None:
             if not os.path.exists("Saved_agents/"):
@@ -214,6 +228,8 @@ class Networks():
     def load(self, path: str):
         """
         Load actor network
+
+        :param path: path to .pth file
         """
         checkpoint = torch.load(path)
         self.actor.load_state_dict(checkpoint)
