@@ -1,5 +1,5 @@
 from MAPPO.parameters import *
-from MAPPO.ActorCritic import neurons, activation_fn, hidden_layer
+from MAPPO.ActorCritic import N_LAYER, N_NEURONS, ACT_FN, N_ENV
 from time import time
 
 def create_md_summary(gym_id: str, name: str, folder: str, seed: float, device: str)-> None:
@@ -38,9 +38,9 @@ def create_md_summary(gym_id: str, name: str, folder: str, seed: float, device: 
         file.write(f"Value normalization: {VALUE_NORM}\n\n")
 
         file.write(f"## Network\n\n")
-        file.write(f"- Number of neurons for hidden layer: {neurons}\n")
-        file.write(f"- Activation function: {activation_fn}\n")
-        file.write(f"- Number of hidden layer: {hidden_layer}\n")
+        file.write(f"- Number of neurons for hidden layer: {N_NEURONS}\n")
+        file.write(f"- Activation function: {ACT_FN}\n")
+        file.write(f"- Number of hidden layer: {N_LAYER}\n")
 
 def complete_md_summary(folder: str, name: str, starting_time: float) -> None:
     """

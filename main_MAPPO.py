@@ -34,7 +34,7 @@ critic_shape = 37
 action_shape = 5
 
 # Use a single agent to represent two agent with parameter sharing
-actor_critic = Networks(obs_shape, action_shape, critic_shape, (LR,LR))
+actor_critic = Networks(obs_shape, action_shape,  critic_shape, (LR,LR))
 buffer = Buffer(obs_shape, critic_shape, action_shape, 2)
 
 # Get the first observation

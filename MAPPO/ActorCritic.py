@@ -42,7 +42,7 @@ class MLP(nn.Module):
             layer_init(nn.Linear(N_NEURONS, N_NEURONS)),
             ACT_FN,
             nn.LayerNorm(N_NEURONS))
-                                  for i in range(self.n_layer)])
+                                  for _ in range(self.n_layer)])
         
     def forward(self, state):
         x = self.fc1(state)
@@ -126,7 +126,7 @@ class Networks():
     :param critic_state_dim: critic state shape, if None critic not created
     """
     
-    def __init__(self, state_dim, action_dim, lr_list = None, critic_state_dim = None, device=torch.device("cpu")):
+    def __init__(self, state_dim, action_dim,  critic_state_dim = None, lr_list = None, device=torch.device("cpu")):
         
         self.state_dim = state_dim
         
