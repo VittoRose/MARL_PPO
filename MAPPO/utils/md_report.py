@@ -4,7 +4,7 @@ from time import time
 
 def create_md_summary(gym_id: str, name: str, folder: str, seed: float, device: str)-> None:
     """
-    Function that create a MarkDown report for parameters used during training
+    Function that create a MarkDown report to show parameters used during training
     """
     report = folder + name + ".md"
     

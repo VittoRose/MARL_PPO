@@ -24,9 +24,10 @@ name = "Debug_00"
 # Tensorboard Summary writer
 gym_id = "GridCoverage-v0"
 logger = InfoPlot(gym_id, name, "cpu", folder="logs/")
+N_AGENT = 2
 
 # Environments for training and
-envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=2) for _ in range(N_ENV)])
+envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=N_AGENT) for _ in range(N_ENV)])
 test_env = gym.make(gym_id, n_agent=2, map_id=1)
 
 # Enviroment spaces
@@ -34,14 +35,11 @@ obs_shape = 33
 action_shape = 5
 
 # Agents network and friend
-agent0 = Agent(obs_shape, action_shape)
-agent1 = Agent(obs_shape, action_shape)
-
-optimizer0 = torch.optim.Adam(agent0.parameters(), lr=LR, eps=1e-5)
-optimizer1 = torch.optim.Adam(agent1.parameters(), lr=LR, eps=1e-5)
-
-buffer0 = Buffer(obs_shape, action_shape)
-buffer1 = Buffer(obs_shape, action_shape)
+agent, optimizer, buffer = [], [], []
+for i in range(N_AGENT):
+    agent.append(Agent(obs_shape, action_shape)) 
+    optimizer.append(torch.optim.Adam(agent[i].parameters(), lr=LR, eps=1e-5))
+    buffer.append(Buffer(obs_shape, action_shape))
 
 # Get the first observation
 next_obs, _ = envs.reset()
@@ -55,7 +53,7 @@ for epoch in range(0, MAX_EPOCH):
     logger.show_progress(epoch)
 
     # Test agent in a separate environment
-    IPPO.test_network(epoch, agent0, agent1, test_env, logger)
+    IPPO.test_network(epoch, agent[0], agent[1], test_env, logger)
     
     # Collect data from the environment
     for step in range(0, N_STEP):
@@ -65,10 +63,13 @@ for epoch in range(0, MAX_EPOCH):
 
         # Get action and value from current state
         with torch.no_grad():
-            action0, logprob0, _, value0 = agent0.get_action_and_value(next_obs[:,0,:])
-            action1, logprob1, _, value1 = agent1.get_action_and_value(next_obs[:,1,:])
-            
-            action = encode_action(action0.cpu(), action1.cpu())
+            actions, logprobs, values = [], [], []
+            for i in range(N_AGENT):
+                action, logprob, _, value = agent[i].get_action_and_value(next_obs[:,i,:])
+                actions.append(action)
+                logprobs.append(logprob)
+                values.append(value)
+            action = encode_action(actions[0].cpu(), actions[1].cpu())
 
         # Execute action in environment
         next_obs, code_reward, truncated, terminated, _ = envs.step(action)
@@ -82,8 +83,9 @@ for epoch in range(0, MAX_EPOCH):
         
         next_obs, next_done = torch.tensor(next_obs), torch.tensor(done)
 
-    advantages0, returns0 = IPPO.get_advantages(agent0, buffer0, next_obs[:, 0, :], next_done)
-    advantages1, returns1 = IPPO.get_advantages(agent0, buffer0, next_obs[:, 1, :], next_done)
+    advantages, returns = [], []
+    for i in range(0,N_AGENT):
+        advantage, returns = IPPO.get_advantages(agent[i], buffer[i], next_obs[:, i, :], next_done)
 
     # flatten the batch
     b_advantages0 = advantages0.reshape(-1)
