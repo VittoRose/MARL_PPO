@@ -60,14 +60,15 @@ class Agent(nn.Module):
         if not os.path.exists("Saved_agents/"):
             os.mkdir("Saved_agents/")
         
-        agent_path = "Saved_agents/" + name + ".pth"
+        agent_path = "Saved_agents/" + name + "_IPPO.pth"
         
         # Add a random number at the end of the name to avoid ovewrite old models
         if os.path.exists(agent_path):
             print("Save name changed, new name:")
+            new = 0
             while os.path.exists(agent_path):
-                rng = np.random.randint(50)
-                agent_path = "Saved_agents/" + name + "_" + str(rng) + ".pth"
+                agent_path = "Saved_agents/" + name + "_" + str(new) + "_IPPO.pth"
+                new += 1
             print(agent_path)
             
         torch.save(self.actor.state_dict(), agent_path)

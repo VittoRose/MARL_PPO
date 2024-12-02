@@ -18,7 +18,7 @@ from MAPPO.utils.util_function import make_env
 import MAPPO.algo as MAPPO
 
 # Run name for logger, use None if no logger is needed
-name = "Run_00"
+name = None
 
 # Tensorboard Summary writer
 gym_id = "GridCoverage-v0"
@@ -83,7 +83,7 @@ for epoch in range(0, MAX_EPOCH):
     
     MAPPO.update_network(actor_critic, buffer, advantages, returns, logger)
 
-actor_critic.save_actor(name)
+actor_critic.save_actor("name")
 
 test_env.close()                
 envs.close()
