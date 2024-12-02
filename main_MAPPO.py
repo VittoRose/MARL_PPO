@@ -18,7 +18,7 @@ from MAPPO.utils.util_function import make_env
 import MAPPO.algo as MAPPO
 
 # Run name for logger, use None if no logger is needed
-name = None
+name = "None"
 
 # Tensorboard Summary writer
 gym_id = "GridCoverage-v0"
@@ -43,7 +43,7 @@ next_obs = torch.tensor(next_obs)
 next_done = torch.zeros(N_ENV)
 
 for epoch in range(0, MAX_EPOCH):
-    
+
     # Progress bar
     logger.show_progress(epoch)
 

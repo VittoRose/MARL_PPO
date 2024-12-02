@@ -48,7 +48,7 @@ next_obs = torch.tensor(next_obs)
 next_done = torch.zeros(N_ENV)
 
 for epoch in range(0, MAX_EPOCH):
-    
+    break
     # Progress bar
     logger.show_progress(epoch)
 

@@ -37,22 +37,41 @@ class InfoPlot:
         if folder[-1] != "/" :
             folder = folder + "/"
 
-        print(f"Experiment name: {name}")
+        self.folder = folder
+        
+        summary = folder + name + ".md"
+        logs = folder + name + "/"
+        
+        if name is not None:
+            # Check if name is not used
+            if os.path.exists(summary) or os.path.exists(logs):
+                
+                self.name = name
+                new = 0
+                
+                while os.path.exists(summary) or os.path.exists(logs):
+                    summary = folder + name + "_" + str(new) + ".md"
+                    logs = folder + name + "_" + str(new) + "/"
+                    self.name = name + "_" + str(new)
+                    new += 1
+                    
+                print(f"Experiment name already exists, changed in: {self.name}")
+                
+            else: 
+                print(f"Experiment name: {name}")
+                
+            self.logger = SummaryWriter(logs)
+            create_md_summary(gym_id, name, folder, seed, device)
+        else:
+            self.logger = None
+        
+        # Save name for complete summary
+        self.summary = summary
+
         print("Running on " + device)
         print("Training IPPO on GridCoverage")
         print(f"Using seed: {seed}") 
 
-        if name is not None:
-
-            # Check if name is not used
-            if os.path.exists(folder+name+".md") or os.path.exists(folder+name+"/"):
-                raise NameError("Logger already exists, change name or folder")
-
-            self.logger = SummaryWriter(folder + name)
-            create_md_summary(gym_id, name, folder, seed, device)
-
-        else:
-            self.logger = None
     
     def add_loss(self, loss: float, agent: int) -> None:
         """
@@ -86,7 +105,7 @@ class InfoPlot:
         if self.logger is not None:
             self.logger.flush()
             self.logger.close()
-            complete_md_summary(self.folder, self.name, self.t0)
+            complete_md_summary(self.summary, self.t0)
 
     def show_progress(self, update) -> None: 
         """

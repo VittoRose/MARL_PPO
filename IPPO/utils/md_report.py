@@ -43,13 +43,12 @@ def create_md_summary(gym_id: str, name: str, folder: str, seed: float, device: 
         file.write(f"- Activation function: {activation_fn}\n")
         file.write(f"- Number of hidden layer: {hidden_layer}\n")
 
-def complete_md_summary(folder: str, name: str, starting_time: float) -> None:
+def complete_md_summary(path: str, starting_time: float) -> None:
     """
     Complete the run summary with execution time
     """
-    report = folder + name + ".md"
     end_time = time()
     min = (end_time - starting_time) / 60
     sec = (end_time - starting_time) % 60
-    with open(report, 'a') as file:
+    with open(path, 'a') as file:
         file.write(f"\nTotal time: {min:.0f} min {sec:.0f} sec\n")
