@@ -28,6 +28,8 @@ class GUI():
 
         if self.col == 5:
             coef = 160
+        elif self.col == 10:
+            coef = 80
         else:
             raise NotImplementedError("Lazy dev here")
 

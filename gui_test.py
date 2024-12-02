@@ -7,11 +7,11 @@ Choose the algorithm used to train the network with the ALGO param
 """
 
 ALGO = "MAPPO"
-path = "Saved_agents/Run_00shared.pth"
+path = "Saved_agents/MAPPOshared.pth"
 
-# ALGO = "IPPO"
-path0 = "Saved_agents/Agent_0.pth"
-path1 = "Saved_agents/Agent_1.pth"
+ALGO = "IPPO"
+path0 = "Saved_agents/Agent_0_39.pth"
+path1 = "Saved_agents/Agent_1_25.pth"
 
 
 import pygame as pg
@@ -37,7 +37,6 @@ if ALGO == "IPPO":
     
 elif ALGO == "MAPPO":
     from MAPPO.ActorCritic import Networks
-
     
     agent0 = Networks(obs_shape, action_shape)
     agent1 = Networks(obs_shape, action_shape)
@@ -53,7 +52,7 @@ if __name__ == "__main__":
     env = GridCoverage(2,1)
     state, _ = env.reset()
     screen = GUI(env)
-    screen.update(env, [0,0])
+    screen.update(env, (0,0))
     step = 0
     run = True
     time.sleep(1)
@@ -71,12 +70,13 @@ if __name__ == "__main__":
         state, reward, term, trunc, _ =  env.step(action)
         step += 1
         
-        screen.update(env, [a1,a2], step)
+        screen.update(env, (a1,a2), step)
         
         if term or trunc:
             state, _ = env.reset()
             step = 0
             time.sleep(2)
+            screen.update(env, (a1,a2), step)
                                
         time.sleep(2)
         

@@ -49,7 +49,7 @@ def chose_action():
 if __name__ == "__main__":
     import time
 
-    env = GridCoverage(2,1)
+    env = GridCoverage(n_agent=2, map_id=2)
     state, _ = env.reset()
     screen = GUI(env)
     run = True
@@ -69,6 +69,9 @@ if __name__ == "__main__":
         
         if not term:
             step += 1
+        
+        if term:
+            print("TERM")
         
             
         time.sleep(.1)

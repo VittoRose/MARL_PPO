@@ -127,6 +127,9 @@ class GridCoverage(gym.Env):
         if self.map_id == 1:
             self.h = 5
             self.w = 5
+        elif self.map_id == 2:
+            self.h = 10
+            self.w = 10
         else:
             raise ValueError("Map not available")
 
@@ -169,14 +172,41 @@ class GridCoverage(gym.Env):
             self.grid[2,3] = OBSTACLE
             self.grid[3,3] = OBSTACLE
             self.grid[3,2] = OBSTACLE
+
+        elif self.map_id == 2:
+            self.grid[1,1] = OBSTACLE
+            self.grid[2,1] = OBSTACLE
+            self.grid[3,1] = OBSTACLE
+
+            self.grid[7,0] = OBSTACLE
+            self.grid[7,1] = OBSTACLE
+
+            self.grid[0,5] = OBSTACLE
+            self.grid[1,5] = OBSTACLE
+            self.grid[2,5] = OBSTACLE
+            self.grid[2,4] = OBSTACLE
+
+            self.grid[0,7] = OBSTACLE
+
+            self.grid[4,4] = OBSTACLE
+            self.grid[4,5] = OBSTACLE
+            self.grid[5,4] = OBSTACLE
+
+            self.grid[7,4] = OBSTACLE
+            self.grid[7,5] = OBSTACLE
+            self.grid[7,6] = OBSTACLE
+            self.grid[8,6] = OBSTACLE
+            self.grid[9,6] = OBSTACLE
             
-            # Min and max value from the grid
-            n_obstacle = -self.grid.sum()
-            self.max_grid = self.w*self.h - n_obstacle
-            
+            self.grid[6,8] = OBSTACLE
+            self.grid[7,8] = OBSTACLE
         else:
             raise ValueError("Map not available")
         
+        # Min and max value from the grid
+        n_obstacle = -self.grid.sum()
+        self.max_grid = self.w*self.h - n_obstacle
+
         # Agents initial position
         for agent in range(self.n_agent):
             while True:

@@ -4,7 +4,6 @@ Run this file to start a new training with Independent Proximal Policy Optimizat
 Modify training parameters in IPPO.parameters
 
 Set name = "experiment_name" to save logs and training parameters, use None to skip logs
-
 """
 
 import gymnasium as gym
@@ -27,11 +26,11 @@ logger = InfoPlot(gym_id, name, "cpu", folder="logs/")
 N_AGENT = 2
 
 # Environments for training and
-envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=N_AGENT) for _ in range(N_ENV)])
-test_env = gym.make(gym_id, n_agent=2, map_id=1)
+envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=N_AGENT, map_id=2) for _ in range(N_ENV)])
+test_env = gym.make(gym_id, n_agent=2, map_id=2)
 
 # Enviroment spaces
-obs_shape = 33
+obs_shape = 108
 action_shape = 5
 
 # Agents network and friend
@@ -48,7 +47,7 @@ next_obs = torch.tensor(next_obs)
 next_done = torch.zeros(N_ENV)
 
 for epoch in range(0, MAX_EPOCH):
-    break
+
     # Progress bar
     logger.show_progress(epoch)
 
