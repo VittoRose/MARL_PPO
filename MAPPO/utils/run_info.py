@@ -41,10 +41,11 @@ class InfoPlot:
             
         self.folder = folder
         
-        summary = folder + name + ".md"
-        logs = folder + name + "/"
         
         if name is not None:
+            summary = folder + name + ".md"
+            logs = folder + name + "/"
+            
             # Check if name is not used
             if os.path.exists(summary) or os.path.exists(logs):
                 
@@ -64,11 +65,12 @@ class InfoPlot:
                 
             self.logger = SummaryWriter(logs)
             create_md_summary(gym_id, name, folder, seed, device)
+            
+            # Save name for complete summary
+            self.summary = summary
         else:
             self.logger = None
         
-        # Save name for complete summary
-        self.summary = summary
 
         print("Running on " + device)
         print("Training MAPPO on GridCoverage")

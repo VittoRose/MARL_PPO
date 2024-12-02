@@ -17,13 +17,13 @@ def get_critic_state(state: torch.tensor, n_env: int) -> torch.tensor:
     
     # Check if the state comes from one env or multiple envs
     if state.size(dim=0) == n_env:
-        critic_states = torch.zeros((n_env, 37))
+        critic_states = torch.zeros((n_env, 112))
         for i,s in enumerate(state):
             critic_states[i] = get_critic_state(s, n_env)
         
         return critic_states
     
-    critic_state = np.zeros(37)
+    critic_state = np.zeros(112)
     
     critic_state[0:4] = state[0, 0:4]
     critic_state[4:8] = state[0, 4:8]

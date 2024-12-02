@@ -18,19 +18,19 @@ from MAPPO.utils.util_function import make_env
 import MAPPO.algo as MAPPO
 
 # Run name for logger, use None if no logger is needed
-name = "None"
+name = None
 
 # Tensorboard Summary writer
 gym_id = "GridCoverage-v0"
 logger = InfoPlot(gym_id, name, "cpu", folder="logs/")
 
 # Environments for training and
-envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=2) for _ in range(N_ENV)])
-test_env = gym.make(gym_id, n_agent=2, map_id=1)
+envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=2, map_id=2) for _ in range(N_ENV)])
+test_env = gym.make(gym_id, n_agent=2, map_id=2)
 
 # Environment spaces
-obs_shape = 33
-critic_shape = 37
+obs_shape = 108
+critic_shape = obs_shape + 4
 action_shape = 5
 
 # Use a single agent to represent two agent with parameter sharing
