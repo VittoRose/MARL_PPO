@@ -1,4 +1,3 @@
-# Function for making vector enviroment
 import gymnasium as gym
 
 def make_env(gym_id: str, n_agent: int) -> gym.spaces:

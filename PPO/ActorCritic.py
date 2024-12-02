@@ -28,7 +28,7 @@ class Agent(nn.Module):
     def get_value(self, x):
         return self.critic(x)
 
-    def get_action_and_value(self, x, action=None, train: bool=True):
+    def get_action_and_value(self, x, action=None):
         """
         Get the action, log(probs), entropy(probs), value of the current state
         if action is None return the probability of the action chosen for the state

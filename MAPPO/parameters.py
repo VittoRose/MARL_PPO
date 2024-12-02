@@ -29,7 +29,7 @@ VALUE_NORM = False
 if BATCH_SIZE % K_EPOCHS != 0:
     raise ValueError("Batch size and K_epochs are not compatible")
 
-MINI_BATCH_SIZE = BATCH_SIZE // K_EPOCHS      # Be careful here
+MINI_BATCH_SIZE = BATCH_SIZE // K_EPOCHS
 
 SEED = 0
 

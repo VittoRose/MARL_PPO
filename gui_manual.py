@@ -1,5 +1,16 @@
 """
 This file show the gui and let you control the agents manually using keyboard
+
+Instructions:
+
+    Each timestep the code expect two input, the first one is the action for agent 0, the second one is for agent 1
+    
+    Controls: 
+        W -> Move up
+        S -> Move down
+        A -> Move left
+        D -> Move right 
+        SPACE -> Stay still
 """
 
 import pygame as pg
@@ -18,6 +29,7 @@ allowed_action = {
 }
 
 def chose_action():
+    """ Wait for two different instructions """
     actions = []  
     
     while len(actions) < 2: 
@@ -27,8 +39,8 @@ def chose_action():
                 
             if event.type == pg.KEYDOWN: 
                 if event.key in allowed_action: 
-                    azione = allowed_action[event.key]
-                    actions.append(azione)
+                    action = allowed_action[event.key]
+                    actions.append(action)
                     if len(actions) == 2: 
                         break
 
@@ -41,6 +53,8 @@ if __name__ == "__main__":
     state, _ = env.reset()
     screen = GUI(env)
     run = True
+    step = 0
+    screen.update(env, [0,0], step)
 
     while run:
         
@@ -53,9 +67,10 @@ if __name__ == "__main__":
         action = encode_action(torch.tensor(a1), torch.tensor(a2))
         state, reward, term, trunc, _ =  env.step(action)
         
-        if term or trunc: 
-            print(term, trunc)
+        if not term:
+            step += 1
+        
             
         time.sleep(.1)
         
-        screen.update(env, [a1,a2])
+        screen.update(env, [a1,a2], step)

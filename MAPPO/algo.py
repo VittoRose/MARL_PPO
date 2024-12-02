@@ -12,7 +12,7 @@ def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, to
     :param next_obs: Last observation for the N_STEPth timestamp
     :param next_done: Last done check
     
-    :return advantages: estiamtion using GAE, [N_STEP, N_ENV, N_AGENT]
+    :return advantages: estimation using GAE, [N_STEP, N_ENV, N_AGENT]
     :return values: target for critic network, [N_STEP, N_ENV, N_AGENT]
     """
     
@@ -178,7 +178,7 @@ def update_critic(agent, mb_critic, mb_values, mb_returns):
         
 def test_network(update, agent, test_env, logger):
     """
-    Execute n complete run in a test enviroment using the action with the maximum probability from the policy
+    Execute n complete run in a test environment using the action with the maximum probability from the policy
     
     :param update: Current epoch number
     :param agent: Actor_critic wrapper
@@ -191,7 +191,7 @@ def test_network(update, agent, test_env, logger):
         rew_data = np.zeros((2, TEST_RESET))
         len_data = np.zeros(TEST_RESET)
         
-        # Collect data for 3 episode of test and log the mean reward and ep_lenght
+        # Collect data for 3 episode of test and log the mean reward and ep_length
         for i in range(TEST_RESET):
             stop_test = False
             test_reward = [0, 0]

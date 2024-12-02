@@ -1,13 +1,18 @@
 """
 This file is used to test trained network with a GUI
 
-Change manually the path inside the if ALGO == ... to load the correct file
+Change manually the path to the agent parameters
 
 Choose the algorithm used to train the network with the ALGO param
 """
 
 ALGO = "MAPPO"
+path = "Saved_agents/Run_00shared.pth"
+
 # ALGO = "IPPO"
+path0 = "Saved_agents/Agent_0.pth"
+path1 = "Saved_agents/Agent_1.pth"
+
 
 import pygame as pg
 import torch
@@ -21,9 +26,6 @@ action_shape = 5
 if ALGO == "IPPO":
     from IPPO.ActorCritic import Agent
     
-    path0 = "Saved_agents/Agent_0.pth"
-    path1 = "Saved_agents/Agent_1.pth"
-
     agent0 = Agent(obs_shape, action_shape)
     agent1 = Agent(obs_shape, action_shape)
 
@@ -35,7 +37,7 @@ if ALGO == "IPPO":
     
 elif ALGO == "MAPPO":
     from MAPPO.ActorCritic import Networks
-    path = "Saved_agents/Run_00shared.pth"
+
     
     agent0 = Networks(obs_shape, action_shape)
     agent1 = Networks(obs_shape, action_shape)
@@ -51,8 +53,11 @@ if __name__ == "__main__":
     env = GridCoverage(2,1)
     state, _ = env.reset()
     screen = GUI(env)
+    screen.update(env, [0,0])
+    step = 0
     run = True
-
+    time.sleep(1)
+    
     while run:
         
         for event in pg.event.get():
@@ -64,12 +69,14 @@ if __name__ == "__main__":
 
         action = encode_action(a1, a2)
         state, reward, term, trunc, _ =  env.step(action)
+        step += 1
         
-        screen.update(env, [a1,a2])
+        screen.update(env, [a1,a2], step)
         
-        if term or trunc: 
-            print(term, trunc)
-            run = False
-            
+        if term or trunc:
+            state, _ = env.reset()
+            step = 0
+            time.sleep(2)
+                               
         time.sleep(2)
         

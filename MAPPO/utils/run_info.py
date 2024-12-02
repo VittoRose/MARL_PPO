@@ -24,7 +24,7 @@ class InfoPlot:
         # Counter for plot
         self.test_index = 0
 
-        # Speed measurament variable
+        # Speed measurement variable
         self.timer = time()
         self.t0 = time()
         self.buff = deque(maxlen=100)
@@ -39,7 +39,7 @@ class InfoPlot:
         self.loss_plot = 0
         self.loss_idx = 0
             
-        # Add folder sintax if needed
+        # Add folder syntax if needed
         if folder[-1] != "/" :
             folder = folder + "/"
 

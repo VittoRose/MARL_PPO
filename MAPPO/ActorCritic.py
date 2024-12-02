@@ -4,7 +4,7 @@ from torch.distributions.categorical import Categorical
 import os
 import numpy as np
 
-# Number of hidden layer, neurons and activation funcion are defined in parameters.py
+# Number of hidden layer, neurons and activation function are defined in parameters.py
 from .parameters import N_LAYER, N_NEURONS, ACT_FN, N_ENV
 
 def init(module, weight_init, bias_init, gain=1):
@@ -57,7 +57,7 @@ class Actor(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(Actor, self).__init__()
         
-        # First + hydden layer
+        # First + hidden layer
         self.base = MLP(input_dim)
         
         # Last layer
@@ -215,7 +215,7 @@ class Networks():
             
             agent_path = "Saved_agents/" + name + "shared" + ".pth"
             
-            # Add a random number at the end of the name to avoid ovewrite old models
+            # Add a random number at the end of the name to avoid overwrite old models
             if os.path.exists(agent_path):
                 print("Save name changed, new name:")
                 while os.path.exists(agent_path):

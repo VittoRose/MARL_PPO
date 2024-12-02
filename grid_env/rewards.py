@@ -10,7 +10,7 @@ rewards = {
     "null": 0
 }
 
-# Each reward corrispond to a index in the table
+# Each reward correspond to a index in the table
 reward_code = {
     "null" : 0,
     "contact": 1,
@@ -21,7 +21,7 @@ reward_code = {
     "still": 6
 }
 
-# Get an index and return the corrisponding action string for 
+# Get an index and return the corresponding action string
 reward_decoder = {
     0: "null",
     1: "contact",
