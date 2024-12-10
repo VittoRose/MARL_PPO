@@ -18,7 +18,7 @@ from IPPO.utils.util_function import make_env
 import IPPO.algo as IPPO
 
 # Run name for logger, use None if no logger is needed
-name = "Debug_00"
+name = "IPPO_10x10"
 
 # Tensorboard Summary writer
 gym_id = "GridCoverage-v0"

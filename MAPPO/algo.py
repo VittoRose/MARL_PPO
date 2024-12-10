@@ -155,7 +155,7 @@ def update_critic(agent, mb_critic, mb_values, mb_returns):
     
     # Normalize value 
     if VALUE_NORM:
-        newval = (newval - newval.mean()) / (newval.std() + 1e-8)
+        # newval = (newval - newval.mean()) / (newval.std() + 1e-8)
         mb_values = (mb_values - mb_values.mean()) / (mb_values.std() + 1e-8)
 
     # Value loss

@@ -65,7 +65,7 @@ def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, 
 
         # Normalize value 
         if VALUE_NORM:
-            newval = (newval - newval.mean()) / (newval.std() + 1e-8)
+            # newval = (newval - newval.mean()) / (newval.std() + 1e-8)
             b_values[min_batch_idx] = (b_values[min_batch_idx] - b_values[min_batch_idx].mean()) / (b_values[min_batch_idx].std() + 1e-8)
         
         # Policy loss
