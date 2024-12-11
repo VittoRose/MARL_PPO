@@ -17,6 +17,8 @@ from IPPO.utils.run_info import InfoPlot
 from IPPO.utils.util_function import make_env
 import IPPO.algo as IPPO
 
+MAP_ID = 2
+
 # Run name for logger, use None if no logger is needed
 name = "IPPO_10x10"
 
@@ -26,11 +28,15 @@ logger = InfoPlot(gym_id, name, "cpu", folder="logs/")
 N_AGENT = 2
 
 # Environments for training and
-envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=N_AGENT, map_id=2) for _ in range(N_ENV)])
-test_env = gym.make(gym_id, n_agent=2, map_id=2)
+envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=N_AGENT, map_id=MAP_ID) for _ in range(N_ENV)])
+test_env = gym.make(gym_id, n_agent=2, map_id=MAP_ID)
 
-# Enviroment spaces
-obs_shape = 108
+# Environment spaces
+if MAP_ID == 2:
+    obs_shape = 108
+elif MAP_ID == 1:
+    obs_shape = 33
+
 action_shape = 5
 
 # Agents network and friend
