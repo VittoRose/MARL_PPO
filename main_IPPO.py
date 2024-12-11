@@ -17,14 +17,17 @@ from IPPO.utils.run_info import InfoPlot
 from IPPO.utils.util_function import make_env
 import IPPO.algo as IPPO
 
-MAP_ID = 2
+MAP_ID = 1
 
 # Run name for logger, use None if no logger is needed
-name = "IPPO_10x10"
+name = None
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device_name = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Tensorboard Summary writer
 gym_id = "GridCoverage-v0"
-logger = InfoPlot(gym_id, name, "cpu", folder="logs/")
+logger = InfoPlot(gym_id, name, device_name, folder="logs/")
 N_AGENT = 2
 
 # Environments for training and
@@ -42,14 +45,14 @@ action_shape = 5
 # Agents network and friend
 agent, optimizer, buffer = [], [], []
 for i in range(N_AGENT):
-    agent.append(Agent(obs_shape, action_shape)) 
+    agent.append(Agent(obs_shape, action_shape).to(device)) 
     optimizer.append(torch.optim.Adam(agent[i].parameters(), lr=LR, eps=1e-5))
     buffer.append(Buffer(obs_shape, action_shape))
 
 # Get the first observation
 next_obs, _ = envs.reset()
 
-next_obs = torch.tensor(next_obs)
+next_obs = torch.tensor(next_obs, device=device)
 next_done = torch.zeros(N_ENV)
 
 for epoch in range(0, MAX_EPOCH):
@@ -58,7 +61,7 @@ for epoch in range(0, MAX_EPOCH):
     logger.show_progress(epoch)
 
     # Test agent in a separate environment
-    IPPO.test_network(epoch, agent[0], agent[1], test_env, logger)
+    IPPO.test_network(epoch, agent[0], agent[1], test_env, device, logger)
     
     # Collect data from the environment
     for step in range(0, N_STEP):
@@ -72,9 +75,9 @@ for epoch in range(0, MAX_EPOCH):
             
             for i in range(N_AGENT):
                 action, logprob, _, value = agent[i].get_action_and_value(next_obs[:,i,:])
-                actions.append(action)
-                logprobs.append(logprob)
-                values.append(value)
+                actions.append(action.cpu())
+                logprobs.append(logprob.cpu())
+                values.append(value.cpu())
                 
             action = encode_action(actions[0].cpu(), actions[1].cpu())
 
@@ -90,16 +93,23 @@ for epoch in range(0, MAX_EPOCH):
         for i in range(N_AGENT):
             buffer[i].store(values[i], actions[i], logprobs[i], rewards[i], step)
         
-        next_obs, next_done = torch.tensor(next_obs), torch.tensor(done)
+        next_obs, next_done = torch.tensor(next_obs, device=device), torch.tensor(done)
 
-    for i in range(0,N_AGENT):
+    for i in range(N_AGENT):
         advantage, returns = IPPO.get_advantages(agent[i], buffer[i], next_obs[:, i, :], next_done)
 
         # flatten the batch
         b_advantages = advantage.reshape(-1)
         b_returns = returns.reshape(-1)
 
-        IPPO.update_network(agent[i], optimizer[i], buffer[i], b_advantages, b_returns, logger, i)
+        IPPO.update_network(agent[i], 
+                            optimizer[i], 
+                            buffer[i],
+                            b_advantages, 
+                            b_returns, 
+                            logger, 
+                            i, 
+                            device)
 
 # Save agents    
 agent[0].save_actor("Agent_0")

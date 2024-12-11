@@ -20,13 +20,13 @@ def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, to
             else:
                 nextnonterminal = 1.0 - buffer.dones[t + 1].int()
                 nextvalues = buffer.values[t + 1]
-            delta = buffer.rewards[t] + GAMMA * nextvalues * nextnonterminal - buffer.values[t]
+            delta = buffer.rewards[t] + GAMMA * nextvalues.cpu() * nextnonterminal - buffer.values[t]
             advantages[t] = lastgaelam = delta + GAMMA * GAE_LAMBDA * nextnonterminal * lastgaelam
         returns = advantages + buffer.values
 
     return advantages, returns
 
-def update_network(agent, optimizer, buffer, b_advantages, b_returns, logger, agent_id):
+def update_network(agent, optimizer, buffer, b_advantages, b_returns, logger, agent_id, device):
     """
     Update network K times with the same experience divided in mini batches
     """
@@ -38,10 +38,10 @@ def update_network(agent, optimizer, buffer, b_advantages, b_returns, logger, ag
         # Shuffle index to break correlations
         np.random.shuffle(index)
         
-        update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index, agent_id)
+        update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index, agent_id, device)
 
 
-def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index, agent_id) -> None:
+def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, index, agent_id, device) -> None:
     """
     Update actor and critic network using mini_batches from buffer 
     """
@@ -54,8 +54,9 @@ def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, 
 
         min_batch_idx = index[start:end]
 
-        _, newlogprob, entropy, newval = agent.get_action_and_value(b_obs[min_batch_idx], b_actions.long()[min_batch_idx])
-        logratio = newlogprob - b_logprobs[min_batch_idx]
+        _, newlogprob, entropy, newval = agent.get_action_and_value(b_obs[min_batch_idx].to(device),
+                                                                     b_actions.long()[min_batch_idx].to(device))
+        logratio = newlogprob.cpu() - b_logprobs[min_batch_idx]
         ratio = logratio.exp()
 
         mb_advantages = b_advantages[min_batch_idx]
@@ -75,16 +76,16 @@ def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, 
 
         # Value loss
         if VALUE_CLIP:
-            v_clip = b_values[min_batch_idx] + torch.clamp(newval.squeeze()-b_values[min_batch_idx], 1-CLIP, 1+CLIP)
-            v_losses = torch.nn.functional.mse_loss(newval.squeeze(), b_returns[min_batch_idx])
+            v_clip = b_values[min_batch_idx] + torch.clamp(newval.cpu().squeeze()-b_values[min_batch_idx], 1-CLIP, 1+CLIP)
+            v_losses = torch.nn.functional.mse_loss(newval.cpu().squeeze(), b_returns[min_batch_idx])
             v_loss_max = torch.max(v_clip, v_losses)
             v_loss = 0.5*v_loss_max.mean()
         else:
-            v_losses = torch.nn.functional.mse_loss(newval.squeeze(), b_returns[min_batch_idx])
+            v_losses = torch.nn.functional.mse_loss(newval.cpu().squeeze(), b_returns[min_batch_idx])
             v_loss = v_losses.mean()
 
         # Entropy loss
-        entropy_loss = entropy.mean()
+        entropy_loss = entropy.cpu().mean()
 
         # Global loss function
         loss = pg_loss - ENTROPY_COEF*entropy_loss + VALUE_COEFF*v_loss
@@ -95,7 +96,7 @@ def update_minibatch(agent, optimizer, buffer, b_advantages, b_returns, logger, 
         torch.nn.utils.clip_grad_norm_(agent.parameters(), 0.5)
         optimizer.step()
 
-def test_network(update, agent0, agent1, test_env, logger):
+def test_network(update, agent0, agent1, test_env, device, logger):
     """
     Execute n complete run in a test enviroment without exploration
     """
@@ -115,7 +116,7 @@ def test_network(update, agent0, agent1, test_env, logger):
             while not stop_test:
                 # Get action with argmax
                 with torch.no_grad():
-                    test_state_tensor = torch.tensor(test_state)
+                    test_state_tensor = torch.tensor(test_state, device=device)
                     action = encode_action(agent0.get_action_test(test_state_tensor[0]).cpu(),
                                             agent1.get_action_test(test_state_tensor[1]).cpu())
                     
