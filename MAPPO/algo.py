@@ -4,7 +4,7 @@ from grid_env.coverage import encode_action, decode_reward, get_critic_state
 
 from .parameters import *
 
-def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, torch.tensor]:
+def get_advantages(agent, buffer, next_obs, next_done, map_id) -> tuple[torch.tensor, torch.tensor]:
     """
     Get advantage and return value based on the interaction with the environment
     
@@ -17,7 +17,7 @@ def get_advantages(agent, buffer, next_obs, next_done) -> tuple[torch.tensor, to
     """
     
     with torch.no_grad():
-        critic_state = get_critic_state(next_obs, N_ENV)
+        critic_state = get_critic_state(next_obs, N_ENV, map_id)
         next_value = agent.get_value(critic_state)
         advantages = torch.zeros_like(buffer.rewards)
         lastgaelam = 0

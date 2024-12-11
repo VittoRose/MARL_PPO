@@ -17,6 +17,8 @@ from MAPPO.utils.run_info import InfoPlot
 from MAPPO.utils.util_function import make_env
 import MAPPO.algo as MAPPO
 
+MAP_ID = 1
+
 # Run name for logger, use None if no logger is needed
 name = None
 
@@ -25,11 +27,15 @@ gym_id = "GridCoverage-v0"
 logger = InfoPlot(gym_id, name, "cpu", folder="logs/")
 
 # Environments for training and
-envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=2, map_id=2) for _ in range(N_ENV)])
-test_env = gym.make(gym_id, n_agent=2, map_id=2)
+envs = gym.vector.SyncVectorEnv([make_env(gym_id, n_agent=2, map_id=MAP_ID) for _ in range(N_ENV)])
+test_env = gym.make(gym_id, n_agent=2, map_id=MAP_ID)
 
 # Environment spaces
-obs_shape = 108
+if MAP_ID == 2:
+    obs_shape = 108
+elif MAP_ID == 1:
+    obs_shape = 33
+
 critic_shape = obs_shape + 4
 action_shape = 5
 
@@ -59,7 +65,7 @@ for epoch in range(0, MAX_EPOCH):
         with torch.no_grad():
             state_list = [next_obs[:,i,:] for i in range(2)]
             states = torch.stack(state_list)
-            critic_state = get_critic_state(next_obs, N_ENV)
+            critic_state = get_critic_state(next_obs, N_ENV, MAP_ID)
             actions, logprob, value = actor_critic.get_action_value(states, critic_state)
             
             action = encode_action(actions[:,0].cpu(), actions[:,1].cpu())
@@ -79,7 +85,7 @@ for epoch in range(0, MAX_EPOCH):
         
         next_obs, next_done = torch.tensor(next_obs), torch.tensor(done)
         
-    advantages, returns = MAPPO.get_advantages(actor_critic, buffer, next_obs, next_done)
+    advantages, returns = MAPPO.get_advantages(actor_critic, buffer, next_obs, next_done, MAP_ID)
     
     MAPPO.update_network(actor_critic, buffer, advantages, returns, logger)
 

@@ -10,20 +10,25 @@ OBSTACLE = -1
 FREE = 0
 VISITED = 1
 
-def get_critic_state(state: torch.tensor, n_env: int) -> torch.tensor:
+def get_critic_state(state: torch.tensor, n_env: int, map_id: int) -> torch.tensor:
     """
     Use the state from the two agents to get the centralized critic state
     """
     
+    if map_id == 1:
+        size = 37
+    elif map_id == 2:
+        size = 112
+    
     # Check if the state comes from one env or multiple envs
     if state.size(dim=0) == n_env:
-        critic_states = torch.zeros((n_env, 112))
+        critic_states = torch.zeros((n_env, size))
         for i,s in enumerate(state):
-            critic_states[i] = get_critic_state(s, n_env)
+            critic_states[i] = get_critic_state(s, n_env, map_id)
         
         return critic_states
     
-    critic_state = np.zeros(112)
+    critic_state = np.zeros(size)
     
     critic_state[0:4] = state[0, 0:4]
     critic_state[4:8] = state[0, 4:8]
