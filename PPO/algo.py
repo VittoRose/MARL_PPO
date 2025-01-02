@@ -94,7 +94,7 @@ def test_network(update, agent, test_env, logger, device):
     """
     Execute n complete run in a test enviroment without exploration
     """
-    if update % TEST_INTERVAL:
+    if update % TEST_INTERVAL == 0:
         
         rew_data = np.zeros(TEST_RESET)
         len_data = np.zeros(TEST_RESET)

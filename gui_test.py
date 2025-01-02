@@ -8,14 +8,11 @@ Choose the algorithm used to train the network with the ALGO param
 
 ALGO = "MAPPO"
 ALGO = "PPO"
-path = "Saved_agents/Debug_PPO.pth"
+path = "Saved_agents/Debug_1_PPO.pth"
 
 # ALGO = "IPPO"
 path0 = "Saved_agents/Agent_0_39.pth"
 path1 = "Saved_agents/Agent_1_25.pth"
-
-
-
 
 import pygame as pg
 import torch
@@ -46,6 +43,7 @@ elif ALGO == "MAPPO":
 
     agent0.load(path)
     agent1.load(path)
+    
 elif ALGO == "PPO":
     from PPO.ActorCritic import Agent
     
@@ -95,5 +93,5 @@ if __name__ == "__main__":
             time.sleep(2)
             screen.update(env, (a1,a2), step)
                                
-        time.sleep(2)
+        time.sleep(1.5)
         

@@ -125,7 +125,7 @@ class InfoPlot:
         progress = f"\rProgress: {update/MAX_EPOCH*100:2.2f} %"
         speed = f"    Epoch/s: {epoch_speed:2.2f}"                                                  # Don't use \t
         avg_string = f"    Average speed: {avg:2.2f}"
-        time_to_go = f"    Remaining time: {remaining_time/60:3.0f} min {remaining_time%60:2.0f} s"
+        time_to_go = f"    Remaining time: {remaining_time/60:3.0f}  min {remaining_time%60:3.0f} s"
 
         print(progress + speed + avg_string + time_to_go, end="")
 

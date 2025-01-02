@@ -1,10 +1,10 @@
 # Container for reward value
 rewards = {
-    "still": -0.1,                      # Agent stay still
+    "still": -0.2,                      # Agent stay still
     "contact": -0.5,                    # Agent move into a wall
-    "collision": -0.8,                  # Agent bump into other agent
+    "collision": -0.1,                  # Agent bump into other agent
     "out": -0.5,                        # Agent move out map
-    "tile_covered": -0.15,              # Agent moved in a previous covered tile
+    "tile_covered": -0.08,              # Agent moved in a previous covered tile
     "tile_not_covered": 1,              # Agent move in a empty tile
     "all_covered": 200,                 # Agents covered all tiles (shared)
     "null": 0

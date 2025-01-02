@@ -14,7 +14,7 @@ from PPO.utils.run_info import InfoPlot
 from PPO.utils.util_function import make_env
 import PPO.algo as PPO
 
-name = "Debug"
+name = "Single_agent"
 gym_id = "GridCoverage-v0"
 
 # Select device
