@@ -48,6 +48,8 @@ class Agent(nn.Module):
         return action             
     
     def save_actor(self, name: str) -> None:
+        """ Save the actor in Saved_agents folder """
+        
         if not os.path.exists("Saved_agents/"):
             os.mkdir("Saved_agents/")
         
@@ -63,6 +65,12 @@ class Agent(nn.Module):
             print(agent_path)
 
         torch.save(self.actor.state_dict(), agent_path)
+        
+    def load(self, path: str) -> None:
+        """ Load parameters from a trained network """
+        
+        checkpoint = torch.load(path, weights_only=True)
+        self.actor.load_state_dict(checkpoint)
 
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):
     torch.nn.init.orthogonal_(layer.weight, std)

@@ -75,6 +75,7 @@ for epoch in range(0, MAX_EPOCH):
 
     PPO.update_network(agent, optimizer, buffer, b_advantages, b_returns, logger)
 
+agent.save_actor(name)
 test_env.close()                
 envs.close()
 logger.close()

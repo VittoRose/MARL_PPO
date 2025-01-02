@@ -299,7 +299,7 @@ class GridCoverage(gym.Env):
         if self.n_agent == 2:
             reward: int = encode_reward(rew_key, terminated)
         else:
-            reward: int = reward_code[rew_key[0]]
+            reward: int = rewards[rew_key[0]]
             if terminated:
                 reward += rewards["all_covered"]
 

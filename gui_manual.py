@@ -32,7 +32,7 @@ def chose_action():
     """ Wait for two different instructions """
     actions = []  
     
-    while len(actions) < 2: 
+    while len(actions) < env.n_agent: 
         for event in pg.event.get():
             if event.type == pg.QUIT: 
                 pg.quit()
@@ -44,7 +44,7 @@ def chose_action():
                     if len(actions) == 2: 
                         break
 
-    return actions[0], actions[1] 
+    return actions
 
 if __name__ == "__main__":
     import time
@@ -62,9 +62,13 @@ if __name__ == "__main__":
             if event.type == pg.QUIT:
                 run = False
                             
-        a1, a2 = chose_action()
-
-        action = encode_action(torch.tensor(a1), torch.tensor(a2))
+        a = chose_action()
+        
+        if env.n_agent > 1:
+            action = encode_action(torch.tensor(a[0]), torch.tensor(a[1]))
+        else:
+            action = a[0]
+            a.append(None)
         state, reward, term, trunc, _ =  env.step(action)
         
         if not term:
@@ -76,4 +80,4 @@ if __name__ == "__main__":
             
         time.sleep(.1)
         
-        screen.update(env, [a1,a2], step)
+        screen.update(env, [a[0], a[1]], step)
