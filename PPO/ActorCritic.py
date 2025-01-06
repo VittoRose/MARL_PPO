@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 # Network parameters
-neurons = 32
+neurons = 64
 activation_fn = nn.Tanh()
 hidden_layer = 2                # Only for plot, change it manually
 

@@ -20,7 +20,7 @@ import MAPPO.algo as MAPPO
 MAP_ID = 1
 
 # Run name for logger, use None if no logger is needed
-name = None
+name = "prova_mappo"
 
 # Tensorboard Summary writer
 gym_id = "GridCoverage-v0"

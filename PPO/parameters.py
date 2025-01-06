@@ -1,7 +1,7 @@
 
 # Training parameters
 n_env = 4
-n_step = 512                    # Number of step in the environment between each update
+n_step = 256                    # Number of step in the environment between each update
 BATCH_SIZE = n_env*n_step       # Data collected for each update
 MAX_EPOCH = 4_000               # Total epoch for training
 

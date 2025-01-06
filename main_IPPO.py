@@ -20,7 +20,7 @@ import IPPO.algo as IPPO
 MAP_ID = 1
 
 # Run name for logger, use None if no logger is needed
-name = None
+name = "ippo_test"
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 device_name = "cuda" if torch.cuda.is_available() else "cpu"

@@ -14,7 +14,7 @@ from PPO.utils.run_info import InfoPlot
 from PPO.utils.util_function import make_env
 import PPO.algo as PPO
 
-name = "Single_agent"
+name = "prova"
 gym_id = "GridCoverage-v0"
 
 # Select device
@@ -43,7 +43,7 @@ next_obs, _ = envs.reset(seed=SEED)
 next_obs = torch.tensor(next_obs).to(device)
 next_done = torch.zeros(n_env).to(device)
 
-for epoch in range(0, MAX_EPOCH):
+for epoch in range(MAX_EPOCH):
 
     # Progress bar
     logger.show_progress(epoch)
